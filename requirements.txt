@@ -1,0 +1,7 @@
+python-rapidjson
+tqdm
+requests
+git
+pygithub
+joblib
+bzip2
