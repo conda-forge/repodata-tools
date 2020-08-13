@@ -172,7 +172,7 @@ if __name__ == "__main__":
             update_channeldata_for_subdir(channel_data, repodata, subdir, shards_repo)
 
         with open(f"channeldata_{label}.json", "w") as fp:
-            json.dump(channel_data, fp)
+            json.dump(channel_data, fp, indent=2, sort_keys=True)
         subprocess.run(
             f"bzip2 --keep channeldata_{label}.json",
             shell=True,

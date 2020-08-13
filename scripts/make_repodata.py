@@ -116,7 +116,7 @@ if __name__ == "__main__":
         )
         for label in rd:
             with open(f"repodata_{subdir}_{label}.json", "w") as fp:
-                json.dump(rd[label], fp)
+                json.dump(rd[label], fp, indent=2, sort_keys=True)
             subprocess.run(
                 f"bzip2 --keep repodata_{subdir}_{label}.json",
                 shell=True,
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                 links[label] = {}
             links[label].update(_links[label])
     with open("links.json", "w") as fp:
-        json.dump(links, fp)
+        json.dump(links, fp, indent=2, sort_keys=True)
     subprocess.run(
         "bzip2 links.json",
         shell=True,

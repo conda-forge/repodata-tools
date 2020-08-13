@@ -36,7 +36,7 @@ r = repo.create_git_tag_and_release(
 
 info = {"shards_sha": rd_sha}
 with open("repodata_info.json", "w") as fp:
-    json.dump(info, fp)
+    json.dump(info, fp, indent=2, sort_keys=True)
 
 
 fnames = glob.glob("repodata_*") + glob.glob("links_*") + glob.glob("channeldata_*")
