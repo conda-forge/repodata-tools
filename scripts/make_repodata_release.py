@@ -39,7 +39,7 @@ with open("repodata_info.json", "w") as fp:
     json.dump(info, fp)
 
 
-fnames = glob.glob("repodata_*") + glob.glob("links_*")
+fnames = glob.glob("repodata_*") + glob.glob("links_*") + glob.glob("channeldata_*")
 for fname in fnames:
     if fname.endswith("bz2"):
         content_type = "application/x-bzip2"

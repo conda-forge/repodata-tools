@@ -5,3 +5,5 @@ git
 pygithub
 joblib
 bzip2
+conda
+conda-build
