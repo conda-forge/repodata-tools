@@ -27,7 +27,8 @@ def get_shard_path(subdir, pkg, n_dirs=12):
 def _load_shard_channeldata(shards_repo, subdir, fn):
     pth = os.path.join(shards_repo, get_shard_path(subdir, fn))
     with open(pth, "r") as fp:
-        return json.load(fp)["channeldata"]
+        shard = json.load(fp)
+    return shard["channeldata"], shard["channeldata_version"]
 
 
 def _make_seconds(timestamp):
@@ -102,8 +103,8 @@ def update_channeldata_for_subdir(channel_data, repodata, subdir, shards_repo):
         fns, fn_dicts = zip(*groups)
 
     for fn_dict, fn in zip(fn_dicts, fns):
-        data = _load_shard_channeldata(shards_repo, subdir, fn)
-        assert data["channeldata_version"] == CHANNELDATA_VERSION
+        data, _cdver = _load_shard_channeldata(shards_repo, subdir, fn)
+        assert _cdver == CHANNELDATA_VERSION
         if data:
             data.update(fn_dict)
             name = data['name']
