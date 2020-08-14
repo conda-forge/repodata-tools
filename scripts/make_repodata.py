@@ -104,7 +104,9 @@ if __name__ == "__main__":
     tm = sys.argv[1]
     shards_path = sys.argv[2]
     links = {}
-    subdirs = ["linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le"]
+    subdirs = [
+        "linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le", "noarch"
+    ]
     for subdir in subdirs:
         r = requests.get(
             f"https://conda.anaconda.org/conda-forge/{subdir}/repodata.json"

@@ -165,7 +165,9 @@ if __name__ == "__main__":
     labels = set([f.split("_", maxsplit=2)[2][:-5] for f in fnames])
     for label in labels:
         channel_data = {}
-        subdirs = ["linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le"]
+        subdirs = [
+            "linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le", "noarch"
+        ]
         for subdir in subdirs:
             with open(f"repodata_{subdir}_{label}.json", "r") as fp:
                 repodata = json.load(fp)

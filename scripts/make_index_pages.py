@@ -11,7 +11,9 @@ if __name__ == "__main__":
     fnames = glob.glob("repodata_*.json")
     fnames = [f for f in fnames if f != "repodata_info.json"]
     labels = set([f.split("_", maxsplit=2)[2][:-5] for f in fnames])
-    subdirs = ["linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le"]
+    subdirs = [
+        "linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le", "noarch"
+    ]
 
     for label in labels:
         if label == "main":

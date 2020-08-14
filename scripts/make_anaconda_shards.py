@@ -24,7 +24,9 @@ if __name__ == "__main__":
     cd = requests.get(
         "https://conda.anaconda.org/conda-forge/channeldata.json"
     ).json()
-    for subdir in ["linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le"]:
+    for subdir in [
+        "linux-64", "osx-64", "win-64", "linux-aarch64", "linux-ppc64le", "noarch"
+    ]:
         r = requests.get(
             f"https://conda.anaconda.org/conda-forge/{subdir}/repodata.json"
         )
