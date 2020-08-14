@@ -2,6 +2,7 @@ import sys
 import os
 import glob
 import rapidjson as json
+import subprocess
 
 from conda_build.index import _make_subdir_index_html, _make_channeldata_index_html
 
@@ -16,11 +17,10 @@ if __name__ == "__main__":
     ]
 
     for label in labels:
+        _dest_pth = os.path.join(dest_pth, "label", label)
         if label == "main":
-            _dest_pth = dest_pth
             channel_name = "conda-forge"
         else:
-            _dest_pth = os.path.join(dest_pth, "label", label)
             channel_name = f"conda-forge/label/{label}"
 
         os.makedirs(_dest_pth, exist_ok=True)
@@ -39,3 +39,9 @@ if __name__ == "__main__":
         html = _make_channeldata_index_html(channel_name, cd)
         with open(os.path.join(_dest_pth, "index.html"), "w") as fp:
             fp.write(html)
+
+    if "main" in labels:
+        subprocess.run(
+            f"cp -r {dest_pth}/label/main/* .",
+            shell=True,
+        )
