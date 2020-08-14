@@ -128,6 +128,6 @@ if __name__ == "__main__":
     with open("links.json", "w") as fp:
         json.dump(links, fp, indent=2, sort_keys=True)
     subprocess.run(
-        "bzip2 links.json",
+        "bzip2 --keep links.json",
         shell=True,
     )
