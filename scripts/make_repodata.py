@@ -14,6 +14,8 @@ def chunk(iterable, chunk_size):
 
     https://stackoverflow.com/a/12797249/1745538
     """
+    chunk_size = max(chunk_size, 1)
+
     iterable = iter(iterable)
     while True:
         chunk = []
