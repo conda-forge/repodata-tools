@@ -131,10 +131,16 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir):
 
 def _build_shard(subdir, pkg, label):
     subdir_pkg = os.path.join(subdir, pkg)
-    url = (
-        "https://conda.anaconda.org/conda-forge"
-        f"/label/{label}/{subdir_pkg}"
-    )
+    if label == "main":
+        url = (
+            "https://conda.anaconda.org/conda-forge"
+            f"/{subdir_pkg}"
+        )
+    else:
+        url = (
+            "https://conda.anaconda.org/conda-forge"
+            f"/label/{label}/{subdir_pkg}"
+        )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         shard = make_repodata_shard(
