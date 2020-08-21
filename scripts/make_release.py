@@ -189,7 +189,6 @@ if __name__ == "__main__":
     # test if shard exists - if so, dump out
     if shard_exists(shard_pth):
         print("*** release already exists - not uploading again! ***", flush=True)
-        sys.exit(0)
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
