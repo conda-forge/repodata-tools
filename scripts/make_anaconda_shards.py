@@ -227,7 +227,13 @@ if __name__ == "__main__":
                             shards_to_write.add(subdir_pkg)
 
                 if jobs:
-                    shards = joblib.Parallel(n_jobs=16, verbose=0)(jobs)
+                    for n_jobs in [16, 8, 4]:
+                        try:
+                            shards = joblib.Parallel(n_jobs=n_jobs, verbose=0)(jobs)
+                        except Exception:
+                            pass
+                        else:
+                            break
                     for shard in shards:
                         subdir_pkg = os.path.join(shard["subdir"], shard["package"])
                         all_shards[subdir_pkg] = shard
