@@ -118,8 +118,9 @@ def get_or_make_release(repo, tag, repo_sha):
 def upload_asset(rel, pth, content_type):
     name = os.path.basename(pth)
     ast = None
-    for ast in rel.get_assets():
-        if ast.name == name:
+    for _ast in rel.get_assets():
+        if _ast.name == name:
+            ast = _ast
             break
             
     print("found asset %s for %s" % (ast, name), flush=True)
