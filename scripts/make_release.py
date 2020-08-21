@@ -121,6 +121,8 @@ def upload_asset(rel, pth, content_type):
     for ast in rel.get_assets():
         if ast.name == name:
             break
+            
+    print("found asset %s for %s" % (ast, name), flush=True)
 
     if ast is None:
         ast = rel.upload_asset(pth, content_type=content_type)
