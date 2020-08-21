@@ -5,6 +5,7 @@ import glob
 import tempfile
 import subprocess
 import time
+import random
 
 import requests
 import rapidjson as json
@@ -210,8 +211,11 @@ if __name__ == "__main__":
 
             os.makedirs(f"shards/{subdir}", exist_ok=True)
 
+            all_pkgs = list(rd["packages"])
+            random.shuffle(all_pkgs)
+
             for chunk_index, pkg_chunk in tqdm.tqdm(
-                enumerate(chunk(rd["packages"], 64)),
+                enumerate(chunk(all_pkgs, 64)),
                 desc=f"{label}/{subdir}",
                 total=len(rd["packages"]) // 64 + 1,
             ):
