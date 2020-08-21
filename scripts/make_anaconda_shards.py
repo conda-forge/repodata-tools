@@ -266,16 +266,12 @@ if __name__ == "__main__":
                             shell=True,
                             check=True,
                         )
+                        subprocess.run("git pull", shell=True, check=True)
+                        subprocess.run("git push", shell=True, check=True)
                     except Exception:
                         pass
                     else:
                         shards_to_write = set()
-
-                    try:
-                        subprocess.run("git push", shell=True, check=True)
-                    except Exception:
-                        subprocess.run("git pull", shell=True)
-                        subprocess.run("git push", shell=True)
 
                 if time.time() - start_time > TIME_LIMIT:
                     sys.exit(1)
