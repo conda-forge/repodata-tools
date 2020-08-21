@@ -117,9 +117,12 @@ def get_or_make_release(repo, tag, repo_sha):
 def upload_asset(rel, pth, content_type):
     name = os.path.basename(pth)
     ast = None
-    for ast in rel.get_assets():
-        if ast.name == name:
+    for _ast in rel.get_assets():
+        if _ast.name == name:
+            ast = _ast
             break
+            
+    print("found asset %s for %s" % (ast, name), flush=True)
 
     if ast is None:
         ast = rel.upload_asset(pth, content_type=content_type)
@@ -186,7 +189,6 @@ if __name__ == "__main__":
     # test if shard exists - if so, dump out
     if shard_exists(shard_pth):
         print("*** release already exists - not uploading again! ***", flush=True)
-        sys.exit(0)
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
