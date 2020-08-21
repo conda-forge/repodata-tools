@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import time
 import random
+import hashlib
 
 import requests
 import rapidjson as json
@@ -36,7 +37,7 @@ def chunk(iterable, chunk_size):
             break
 
 
-def get_shard_path(subdir, pkg, n_dirs=12):
+def get_old_shard_path(subdir, pkg, n_dirs=12):
     chars = [c for c in pkg if c.isalnum()]
     while len(chars) < n_dirs:
         chars.append("z")
@@ -50,16 +51,25 @@ def get_shard_path(subdir, pkg, n_dirs=12):
     return os.path.join(*pth_parts)
 
 
+def get_shard_path(subdir, pkg, n_dirs=4):
+    hex = hashlib.sha1(pkg).hexdigest()[0:n_dirs]
+
+    pth_parts = (
+        ["shards", subdir]
+        + [hex[i] for i in range(n_dirs)]
+        + [pkg + ".json"]
+    )
+
+    return os.path.join(*pth_parts)
+
+
 def gen_shards(shards_repo, subdir, chunksize=1024):
     shards = glob.glob(
         os.path.join(
             shards_repo,
             "shards",
             subdir,
-            "*", "*", "*",
-            "*", "*", "*",
-            "*", "*", "*",
-            "*", "*", "*",
+            "*", "*", "*", "*",
             "*.json"
         )
     )
@@ -178,12 +188,10 @@ if __name__ == "__main__":
     labels = sorted(
         label
         for label in label_info
-        if label != "main" and "/" not in label
+        if "/" not in label
     )
     counts = {label: label_info[label]["count"] for label in labels}
-    counts["main"] = label_info["main"]["count"]
     labels = sorted(labels, key=lambda x: counts[x], reverse=True)
-    labels.append("main")
     for label in labels:
         print("%-32s %s" % (label, counts[label]))
     print(" ")
@@ -223,12 +231,26 @@ if __name__ == "__main__":
                 jobs = []
                 for pkg in pkg_chunk:
                     subdir_pkg = os.path.join(subdir, pkg)
-                    if subdir_pkg not in all_shards:
-                        jobs.append(joblib.delayed(_build_shard)(subdir, pkg, label))
+
+                    old_shard_pth = get_old_shard_path(subdir, pkg)
+                    if os.path.exists(old_shard_pth):
+                        subprocess.run(
+                            "git mv %s %s" % (
+                                old_shard_pth, get_shard_path(subdir, pkg)
+                            ),
+                            shell=True,
+                            check=True,
+                        )
+                        shards_to_write.add(subdir_pkg)
                     else:
-                        if label not in all_shards[subdir_pkg]["labels"]:
-                            all_shards[subdir_pkg]["labels"].append(label)
-                            shards_to_write.add(subdir_pkg)
+                        if subdir_pkg not in all_shards:
+                            jobs.append(joblib.delayed(_build_shard)(
+                                subdir, pkg, label
+                            ))
+                        else:
+                            if label not in all_shards[subdir_pkg]["labels"]:
+                                all_shards[subdir_pkg]["labels"].append(label)
+                                shards_to_write.add(subdir_pkg)
 
                 if jobs:
                     for n_jobs in [16, 8, 4]:

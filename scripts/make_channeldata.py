@@ -3,6 +3,7 @@ import os
 import sys
 import rapidjson as json
 import subprocess
+import hashlib
 
 from conda_build.conda_interface import VersionOrder
 from conda._vendor.toolz.itertoolz import groupby
@@ -10,14 +11,12 @@ from conda._vendor.toolz.itertoolz import groupby
 CHANNELDATA_VERSION = 1
 
 
-def get_shard_path(subdir, pkg, n_dirs=12):
-    chars = [c for c in pkg if c.isalnum()]
-    while len(chars) < n_dirs:
-        chars.append("z")
+def get_shard_path(subdir, pkg, n_dirs=4):
+    hex = hashlib.sha1(pkg).hexdigest()[0:n_dirs]
 
     pth_parts = (
         ["shards", subdir]
-        + [chars[i] for i in range(n_dirs)]
+        + [hex[i] for i in range(n_dirs)]
         + [pkg + ".json"]
     )
 

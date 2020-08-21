@@ -5,20 +5,19 @@ import subprocess
 import sys
 import copy
 import base64
+import hashlib
 
 import github
 import requests
 import tenacity
 
 
-def get_shard_path(subdir, pkg, n_dirs=12):
-    chars = [c for c in pkg if c.isalnum()]
-    while len(chars) < n_dirs:
-        chars.append("z")
+def get_shard_path(subdir, pkg, n_dirs=4):
+    hex = hashlib.sha1(pkg).hexdigest()[0:n_dirs]
 
     pth_parts = (
         ["shards", subdir]
-        + [chars[i] for i in range(n_dirs)]
+        + [hex[i] for i in range(n_dirs)]
         + [pkg + ".json"]
     )
 
