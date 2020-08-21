@@ -233,7 +233,9 @@ if __name__ == "__main__":
                     subdir_pkg = os.path.join(subdir, pkg)
 
                     old_shard_pth = get_old_shard_path(subdir, pkg)
+                    new_shard_pth = get_shard_path(subdir, pkg)
                     if os.path.exists(old_shard_pth):
+                        os.makedirs(os.path.dirname(new_shard_pth, exist_ok=True))
                         subprocess.run(
                             "git mv %s %s" % (
                                 old_shard_pth, get_shard_path(subdir, pkg)
