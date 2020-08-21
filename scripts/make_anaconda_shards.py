@@ -211,7 +211,7 @@ if __name__ == "__main__":
             os.makedirs(f"shards/{subdir}", exist_ok=True)
 
             for chunk_index, pkg_chunk in tqdm.tqdm(
-                enumerate(chunk(sorted(rd["packages"]), 64)),
+                enumerate(chunk(rd["packages"], 64)),
                 desc=f"{label}/{subdir}",
                 total=len(rd["packages"]) // 64 + 1,
             ):
