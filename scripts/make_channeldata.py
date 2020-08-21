@@ -12,7 +12,7 @@ CHANNELDATA_VERSION = 1
 
 
 def get_shard_path(subdir, pkg, n_dirs=4):
-    hex = hashlib.sha1(pkg).hexdigest()[0:n_dirs]
+    hex = hashlib.sha1(pkg.encode("utf-8")).hexdigest()[0:n_dirs]
 
     pth_parts = (
         ["shards", subdir]
