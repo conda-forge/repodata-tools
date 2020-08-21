@@ -189,6 +189,7 @@ if __name__ == "__main__":
     print(" ")
 
     print("updating shards")
+    shards_to_write = set()
     for label in tqdm.tqdm(labels, desc="labels"):
         count = label_info[label]["count"]
 
@@ -220,7 +221,6 @@ if __name__ == "__main__":
                 total=len(rd["packages"]) // 64 + 1,
             ):
                 jobs = []
-                shards_to_write = set()
                 for pkg in pkg_chunk:
                     subdir_pkg = os.path.join(subdir, pkg)
                     if subdir_pkg not in all_shards:
@@ -259,12 +259,23 @@ if __name__ == "__main__":
 
                         subprocess.run(f"git add {pth}", shell=True)
 
-                    subprocess.run(
-                        "git commit -m '[ci skip] added/updated shards "
-                        f"for chunk {chunk_index} of {label}/{subdir}'",
-                        shell=True,
-                    )
-                    subprocess.run("git push", shell=True)
+                    try:
+                        subprocess.run(
+                            "git commit -m '[ci skip] added/updated shards "
+                            f"for chunk {chunk_index} of {label}/{subdir}'",
+                            shell=True,
+                            check=True,
+                        )
+                    except Exception:
+                        pass
+                    else:
+                        shards_to_write = set()
+
+                    try:
+                        subprocess.run("git push", shell=True, check=True)
+                    except Exception:
+                        subprocess.run("git pull", shell=True)
+                        subprocess.run("git push", shell=True)
 
                 if time.time() - start_time > TIME_LIMIT:
                     sys.exit(1)
