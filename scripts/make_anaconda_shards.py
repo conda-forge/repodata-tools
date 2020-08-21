@@ -235,7 +235,7 @@ if __name__ == "__main__":
                     old_shard_pth = get_old_shard_path(subdir, pkg)
                     new_shard_pth = get_shard_path(subdir, pkg)
                     if os.path.exists(old_shard_pth):
-                        os.makedirs(os.path.dirname(new_shard_pth, exist_ok=True))
+                        os.makedirs(os.path.dirname(new_shard_pth), exist_ok=True)
                         subprocess.run(
                             "git mv %s %s" % (
                                 old_shard_pth, get_shard_path(subdir, pkg)
@@ -273,13 +273,15 @@ if __name__ == "__main__":
                     for subdir_pkg in shards_to_write:
                         _, pkg = os.path.split(subdir_pkg)
                         pth = get_shard_path(subdir, pkg)
-                        dir = os.path.dirname(pth)
-                        os.makedirs(dir, exist_ok=True)
 
-                        with open(pth, "w") as fp:
-                            json.dump(
-                                all_shards[subdir_pkg], fp, sort_keys=True, indent=2
-                            )
+                        if subdir_pkg in all_shards:
+                            dir = os.path.dirname(pth)
+                            os.makedirs(dir, exist_ok=True)
+
+                            with open(pth, "w") as fp:
+                                json.dump(
+                                    all_shards[subdir_pkg], fp, sort_keys=True, indent=2
+                                )
 
                         subprocess.run(f"git add {pth}", shell=True)
 
