@@ -210,6 +210,24 @@ def make_or_get_commit(subdir, pkg, make=False):
 
 
 if __name__ == "__main__":
+    # configure git
+
+    subprocess.run(
+        "git config --global user.email 'conda.forge.daemon@gmail.com'",
+        shell=True,
+        check=True,
+    )
+    subprocess.run(
+        "git config --global user.name 'conda-forge-daemon'",
+        shell=True,
+        check=True,
+    )
+    subprocess.run(
+        "git config --global pull.rebase true",
+        shell=True,
+        check=True,
+    )
+
     # pull event data
     with open(os.environ["GITHUB_EVENT_PATH"], 'r') as fp:
         event_data = json.load(fp)
