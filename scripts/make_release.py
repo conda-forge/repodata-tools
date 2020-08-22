@@ -1,5 +1,5 @@
 import os
-import json
+import rapidjson as json
 import tempfile
 import subprocess
 import copy
@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
         shard["url"] = ast.browser_download_url
         with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
-            json.dump(shard, fp)
+            json.dump(shard, fp, sort_keys=True, indent=2)
 
         ast = upload_asset(
             rel,
