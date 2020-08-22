@@ -248,7 +248,7 @@ if __name__ == "__main__":
                                 check=True,
                             )
                             shards_to_write.add(subdir_pkg)
-                            with open(old_shard_pth, "r") as fp:
+                            with open(new_shard_pth, "r") as fp:
                                 all_shards[subdir_pkg] = json.load(fp)
 
                             break
@@ -269,6 +269,7 @@ if __name__ == "__main__":
                         if (
                             label == "main"
                             and all_shards[subdir_pkg]["url"] != main_url
+                            and "conda.anaconda.org" in all_shards[subdir_pkg]["url"]
                         ):
                             all_shards[subdir_pkg]["url"] = main_url
                             shards_to_write.add(subdir_pkg)
