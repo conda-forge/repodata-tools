@@ -92,10 +92,19 @@ def shard_exists(shard_pth):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def get_or_make_release(repo, tag, repo_sha):
+def get_or_make_release(repo, subdir, pkg):
+    tag = f"{subdir}/{pkg}"
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
+        make_commit(subdir, pkg)
+
+        repo_sha = subprocess.run(
+            "git rev-parse --verify HEAD",
+            shell=True,
+            capture_output=True,
+        ).stdout.decode("utf-8").strip()
+
         rel = repo.create_git_tag_and_release(
             tag,
             "",
@@ -142,7 +151,7 @@ def push_shard(shard, shard_pth, subdir, pkg):
         data = {
             "message": (
                 "[ci skip] [skip ci] [cf admin skip] ***NO_CI*** added "
-                "repodata shard for %s/%s" % (subdir, pkg)),
+                "%s/%s" % (subdir, pkg)),
             "content": edata,
             "branch": "master",
         }
@@ -158,21 +167,31 @@ def push_shard(shard, shard_pth, subdir, pkg):
             r.raise_for_status()
 
 
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
+    stop=tenacity.stop_after_attempt(10),
+    reraise=True,
+)
+def make_commit(subdir, pkg):
+    subprocess.run(
+        "git pull",
+        shell=True,
+        check=True,
+    )
+    subprocess.run(
+        "git commit --allow-empty -m "
+        "'[skip ci] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
+        shell=True,
+        check=True,
+    )
+
+
 if __name__ == "__main__":
     # pull event data
     with open(os.environ["GITHUB_EVENT_PATH"], 'r') as fp:
         event_data = json.load(fp)
     event_name = os.environ['GITHUB_EVENT_NAME'].lower()
     assert event_data["action"] == "release"
-
-    # repo info
-    gh = github.Github(os.environ["GITHUB_TOKEN"])
-    repo = gh.get_repo("regro/releases")
-    repo_sha = subprocess.run(
-        "git rev-parse --verify HEAD",
-        shell=True,
-        capture_output=True,
-    ).stdout.decode("utf-8").strip()
 
     # package info
     subdir = event_data['client_payload']["subdir"]
@@ -183,16 +202,20 @@ if __name__ == "__main__":
     print("subdir/package: %s/%s" % (subdir, pkg), flush=True)
     print("url:", url, flush=True)
 
-    shard_pth = get_shard_path(subdir, pkg)
+    # repo info
+    gh = github.Github(os.environ["GITHUB_TOKEN"])
+    repo = gh.get_repo("regro/releases")
 
     # test if shard exists - if so, dump out
+    shard_pth = get_shard_path(subdir, pkg)
     if shard_exists(shard_pth):
         print("*** release already exists - not uploading again! ***", flush=True)
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
         shard = make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir)
-        rel = get_or_make_release(repo, f"{subdir}/{pkg}", repo_sha)
+
+        rel = get_or_make_release(repo, subdir, pkg)
 
         ast = upload_asset(
             rel,
