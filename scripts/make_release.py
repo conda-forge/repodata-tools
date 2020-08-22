@@ -140,7 +140,8 @@ def upload_asset(rel, pth, content_type):
 def push_shard(shard, shard_pth, subdir, pkg):
     if not shard_exists(shard_pth):
         edata = base64.standard_b64encode(
-            json.dumps(shard).encode("utf-8")).decode("ascii")
+            json.dumps(shard, sort_keys=True, indent=2).encode("utf-8")
+        ).decode("ascii")
 
         data = {
             "message": (
