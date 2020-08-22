@@ -51,7 +51,7 @@ def get_old_shard_path(subdir, pkg, n_dirs=12):
     return os.path.join(*pth_parts)
 
 
-def get_shard_path(subdir, pkg, n_dirs=4):
+def get_shard_path(subdir, pkg, n_dirs=3):
     hex = hashlib.sha1(pkg.encode("utf-8")).hexdigest()[0:n_dirs]
 
     pth_parts = (
@@ -69,7 +69,7 @@ def gen_shards(shards_repo, subdir, chunksize=1024):
             shards_repo,
             "shards",
             subdir,
-            "*", "*", "*", "*",
+            "*", "*", "*",
             "*.json"
         )
     )
@@ -232,27 +232,46 @@ if __name__ == "__main__":
                 for pkg in pkg_chunk:
                     subdir_pkg = os.path.join(subdir, pkg)
 
-                    old_shard_pth = get_old_shard_path(subdir, pkg)
                     new_shard_pth = get_shard_path(subdir, pkg)
-                    if os.path.exists(old_shard_pth):
-                        os.makedirs(os.path.dirname(new_shard_pth), exist_ok=True)
-                        subprocess.run(
-                            "git mv %s %s" % (
-                                old_shard_pth, get_shard_path(subdir, pkg)
-                            ),
-                            shell=True,
-                            check=True,
-                        )
-                        shards_to_write.add(subdir_pkg)
+
+                    for old_shard_pth in [
+                        get_old_shard_path(subdir, pkg),
+                        get_shard_path(subdir, pkg, n_dirs=4),
+                    ]:
+                        if os.path.exists(old_shard_pth):
+                            os.makedirs(os.path.dirname(new_shard_pth), exist_ok=True)
+                            subprocess.run(
+                                "git mv %s %s" % (
+                                    old_shard_pth, get_shard_path(subdir, pkg)
+                                ),
+                                shell=True,
+                                check=True,
+                            )
+                            shards_to_write.add(subdir_pkg)
+                            with open(old_shard_pth, "r") as fp:
+                                all_shards[subdir_pkg] = json.load(fp)
+
+                            break
+
+                    if subdir_pkg not in all_shards:
+                        jobs.append(joblib.delayed(_build_shard)(
+                            subdir, pkg, label
+                        ))
                     else:
-                        if subdir_pkg not in all_shards:
-                            jobs.append(joblib.delayed(_build_shard)(
-                                subdir, pkg, label
-                            ))
-                        else:
-                            if label not in all_shards[subdir_pkg]["labels"]:
-                                all_shards[subdir_pkg]["labels"].append(label)
-                                shards_to_write.add(subdir_pkg)
+                        if label not in all_shards[subdir_pkg]["labels"]:
+                            all_shards[subdir_pkg]["labels"].append(label)
+                            shards_to_write.add(subdir_pkg)
+
+                        main_url = (
+                            "https://conda.anaconda.org/conda-forge"
+                            f"/{subdir_pkg}"
+                        )
+                        if (
+                            label == "main"
+                            and all_shards[subdir_pkg]["url"] != main_url
+                        ):
+                            all_shards[subdir_pkg]["url"] = main_url
+                            shards_to_write.add(subdir_pkg)
 
                 if jobs:
                     for n_jobs in [16, 8, 4]:

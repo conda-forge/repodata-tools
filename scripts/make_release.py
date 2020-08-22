@@ -11,7 +11,7 @@ import requests
 import tenacity
 
 
-def get_shard_path(subdir, pkg, n_dirs=4):
+def get_shard_path(subdir, pkg, n_dirs=3):
     hex = hashlib.sha1(pkg.encode("utf-8")).hexdigest()[0:n_dirs]
 
     pth_parts = (

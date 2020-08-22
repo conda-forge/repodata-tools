@@ -35,7 +35,7 @@ def gen_shards(shards_repo, subdir, chunksize=1024):
             shards_repo,
             "shards",
             subdir,
-            "*", "*", "*", "*",
+            "*", "*", "*",
             "*.json"
         )
     )
