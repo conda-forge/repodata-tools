@@ -327,4 +327,4 @@ if __name__ == "__main__":
                         shards_to_write = set()
 
                 if time.time() - start_time > TIME_LIMIT:
-                    sys.exit(1)
+                    sys.exit(0)
