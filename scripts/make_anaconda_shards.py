@@ -168,6 +168,8 @@ def _build_shard(subdir, pkg, label):
 
 if __name__ == "__main__":
     start_time = time.time()
+    rank = int(sys.argv[1])
+    n_ranks = 4
 
     all_shards = {}
     print("reading all shards")
@@ -198,6 +200,7 @@ if __name__ == "__main__":
 
     print("updating shards")
     shards_to_write = set()
+    loop_index = -1
     for label in tqdm.tqdm(labels, desc="labels"):
         count = label_info[label]["count"]
 
@@ -206,6 +209,10 @@ if __name__ == "__main__":
             "osx-64", "win-64",
             "noarch", "osx-arm64"
         ]:
+            loop_index += 1
+            if loop_index % n_ranks != rank:
+                continue
+
             if label == "main":
                 r = requests.get(
                     "https://conda.anaconda.org/conda-forge/"
