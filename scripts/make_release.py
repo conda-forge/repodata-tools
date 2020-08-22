@@ -174,7 +174,7 @@ def make_commit(subdir, pkg):
     )
     subprocess.run(
         "git commit --allow-empty -m "
-        "'[skip ci] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
+        "'[ci skip] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
         shell=True,
         check=True,
     )
