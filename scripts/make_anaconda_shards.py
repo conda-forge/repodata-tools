@@ -205,9 +205,8 @@ if __name__ == "__main__":
         count = label_info[label]["count"]
 
         for subdir in [
-            "linux-64", "linux-aarch64", "linux-ppc64le",
-            "osx-64", "win-64",
-            "noarch", "osx-arm64"
+            "linux-64", "osx-64", "win-64", "noarch",
+            "linux-aarch64", "linux-ppc64le", "osx-arm64"
         ]:
             loop_index += 1
             if loop_index % n_ranks != rank:
