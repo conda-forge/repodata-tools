@@ -315,8 +315,7 @@ if __name__ == "__main__":
                     try:
                         subprocess.run(
                             "git commit -m '[ci skip]  [cf admin skip] ***NO_CI*** "
-                            "added/updated shards "
-                            f"for chunk {chunk_index} of {label}/{subdir}'",
+                            f"chunk {chunk_index} of {label}/{subdir}'",
                             shell=True,
                             check=True,
                         )
