@@ -145,7 +145,8 @@ def push_shard(shard, shard_pth, subdir, pkg):
         data = {
             "message": (
                 "[ci skip] [skip ci] [cf admin skip] ***NO_CI*** added "
-                "%s/%s" % (subdir, pkg)),
+                "%s/%s" % (subdir, pkg)
+            ),
             "content": edata,
             "branch": "master",
         }
@@ -175,7 +176,7 @@ def make_or_get_commit(subdir, pkg, make=False):
         )
         subprocess.run(
             "git commit --allow-empty -m "
-            "'[ci skip] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
+            "'%s/%s [ci skip] [cf admin skip] ***NO_CI***'" % (subdir, pkg),
             shell=True,
             check=True,
         )
