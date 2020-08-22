@@ -97,13 +97,7 @@ def get_or_make_release(repo, subdir, pkg):
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
-        make_commit(subdir, pkg)
-
-        repo_sha = subprocess.run(
-            "git rev-parse --verify HEAD",
-            shell=True,
-            capture_output=True,
-        ).stdout.decode("utf-8").strip()
+        repo_sha = make_commit(subdir, pkg)
 
         rel = repo.create_git_tag_and_release(
             tag,
@@ -184,6 +178,30 @@ def make_commit(subdir, pkg):
         shell=True,
         check=True,
     )
+    repo_sha = subprocess.run(
+        "git rev-parse --verify HEAD",
+        shell=True,
+        capture_output=True,
+    ).stdout.decode("utf-8").strip()
+
+    for i in range(10):
+        try:
+            subprocess.run(
+                "git pull",
+                shell=True,
+                check=True,
+            )
+            subprocess.run(
+                "git push",
+                shell=True,
+                check=True,
+            )
+        except Exception:
+            if i == 9:
+                raise
+        else:
+            break
+    return repo_sha
 
 
 if __name__ == "__main__":
