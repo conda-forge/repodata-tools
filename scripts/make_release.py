@@ -97,7 +97,7 @@ def get_or_make_release(repo, subdir, pkg):
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
-        repo_sha = make_commit(subdir, pkg)
+        repo_sha = make_or_get_commit(subdir, pkg, make=False)
 
         rel = repo.create_git_tag_and_release(
             tag,
@@ -166,41 +166,45 @@ def push_shard(shard, shard_pth, subdir, pkg):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def make_commit(subdir, pkg):
-    subprocess.run(
-        "git pull",
-        shell=True,
-        check=True,
-    )
-    subprocess.run(
-        "git commit --allow-empty -m "
-        "'[ci skip] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
-        shell=True,
-        check=True,
-    )
+def make_or_get_commit(subdir, pkg, make=False):
+    if make:
+        subprocess.run(
+            "git pull",
+            shell=True,
+            check=True,
+        )
+        subprocess.run(
+            "git commit --allow-empty -m "
+            "'[ci skip] [cf admin skip] ***NO_CI*** %s/%s'" % (subdir, pkg),
+            shell=True,
+            check=True,
+        )
+
     repo_sha = subprocess.run(
         "git rev-parse --verify HEAD",
         shell=True,
         capture_output=True,
     ).stdout.decode("utf-8").strip()
 
-    for i in range(10):
-        try:
-            subprocess.run(
-                "git pull",
-                shell=True,
-                check=True,
-            )
-            subprocess.run(
-                "git push",
-                shell=True,
-                check=True,
-            )
-        except Exception:
-            if i == 9:
-                raise
-        else:
-            break
+    if make:
+        for i in range(10):
+            try:
+                subprocess.run(
+                    "git pull",
+                    shell=True,
+                    check=True,
+                )
+                subprocess.run(
+                    "git push",
+                    shell=True,
+                    check=True,
+                )
+            except Exception:
+                if i == 9:
+                    raise
+            else:
+                break
+
     return repo_sha
 
 
