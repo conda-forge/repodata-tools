@@ -97,7 +97,7 @@ def get_or_make_release(repo, subdir, pkg):
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
-        repo_sha = make_or_get_commit(subdir, pkg, make=False)
+        repo_sha = make_or_get_commit(subdir, pkg, make=True)
 
         rel = repo.create_git_tag_and_release(
             tag,
