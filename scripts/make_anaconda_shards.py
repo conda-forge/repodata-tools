@@ -244,17 +244,27 @@ if __name__ == "__main__":
                         get_shard_path(subdir, pkg, n_dirs=4),
                     ]:
                         if os.path.exists(old_shard_pth):
-                            os.makedirs(os.path.dirname(new_shard_pth), exist_ok=True)
-                            subprocess.run(
-                                "git mv %s %s" % (
-                                    old_shard_pth, get_shard_path(subdir, pkg)
-                                ),
-                                shell=True,
-                                check=True,
-                            )
-                            shards_to_write.add(subdir_pkg)
-                            with open(new_shard_pth, "r") as fp:
-                                all_shards[subdir_pkg] = json.load(fp)
+                            if not os.path.exists(new_shard_pth):
+                                os.makedirs(
+                                    os.path.dirname(new_shard_pth),
+                                    exist_ok=True,
+                                )
+                                subprocess.run(
+                                    "git mv %s %s" % (
+                                        old_shard_pth, get_shard_path(subdir, pkg)
+                                    ),
+                                    shell=True,
+                                    check=True,
+                                )
+                                shards_to_write.add(subdir_pkg)
+                                with open(new_shard_pth, "r") as fp:
+                                    all_shards[subdir_pkg] = json.load(fp)
+                            else:
+                                subprocess.run(
+                                    "git rm -f %s" % old_shard_pth,
+                                    shell=True,
+                                    check=True,
+                                )
 
                             break
 
