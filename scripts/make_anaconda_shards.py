@@ -227,10 +227,11 @@ if __name__ == "__main__":
             all_pkgs = list(rd["packages"])
             random.shuffle(all_pkgs)
 
+            total_chunks = len(rd["packages"]) // 64 + 1
             for chunk_index, pkg_chunk in tqdm.tqdm(
                 enumerate(chunk(all_pkgs, 64)),
                 desc=f"{label}/{subdir}",
-                total=len(rd["packages"]) // 64 + 1,
+                total=total_chunks,
             ):
                 jobs = []
                 for pkg in pkg_chunk:
@@ -310,9 +311,10 @@ if __name__ == "__main__":
                         subprocess.run(f"git add {pth}", shell=True)
 
                     try:
+                        cip1 = chunk_index + 1
                         subprocess.run(
                             "git commit -m '[ci skip]  [cf admin skip] ***NO_CI*** "
-                            f"chunk {chunk_index} of {label}/{subdir}'",
+                            f"chunk {cip1} of {total_chunks} {label}/{subdir}'",
                             shell=True,
                             check=True,
                         )
