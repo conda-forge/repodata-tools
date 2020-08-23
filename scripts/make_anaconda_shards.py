@@ -200,15 +200,13 @@ if __name__ == "__main__":
 
     print("updating shards")
     shards_to_write = set()
-    loop_index = -1
     for label in tqdm.tqdm(labels, desc="labels"):
         count = label_info[label]["count"]
 
-        for subdir in [
+        for loop_index, subdir in enumerate([
             "linux-64", "osx-64", "win-64", "noarch",
             "linux-aarch64", "linux-ppc64le", "osx-arm64"
-        ]:
-            loop_index += 1
+        ]):
             if loop_index % n_ranks != rank:
                 continue
 
