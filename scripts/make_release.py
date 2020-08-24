@@ -5,10 +5,23 @@ import subprocess
 import copy
 import base64
 import hashlib
+import sys
+import hmac
 
 import github
 import requests
 import tenacity
+
+
+def compute_md5(pth):
+    with open(pth, "rb") as f:
+        file_hash = hashlib.md5()
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
+            file_hash.update(chunk)
+    return file_hash.hexdigest()
 
 
 def get_shard_path(subdir, pkg, n_dirs=3):
@@ -28,7 +41,7 @@ def get_shard_path(subdir, pkg, n_dirs=3):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir):
+def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_val):
     os.makedirs(f"{tmpdir}/noarch", exist_ok=True)
     os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
     subprocess.run(
@@ -36,6 +49,12 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir):
         shell=True,
         check=True,
     )
+
+    local_md5 = compute_md5(f"{tmpdir}/{subdir}/{pkg}")
+    if not hmac.compare_digest(local_md5, md5_val):
+        print("md5 chechsum is incorrect! exiting!")
+        sys.exit(1)
+
     subprocess.run(
         f"conda index --no-progress {tmpdir}",
         shell=True,
@@ -240,6 +259,7 @@ if __name__ == "__main__":
     label = event_data['client_payload']["label"]
     feedstock = event_data['client_payload']["feedstock"]
     add_shard = event_data['client_payload'].get("add_shard", True)
+    md5_val = event_data['client_payload']["md5"]
     print("subdir/package: %s/%s" % (subdir, pkg), flush=True)
     print("url:", url, flush=True)
     print("add shard:", add_shard, flush=True)
@@ -250,7 +270,7 @@ if __name__ == "__main__":
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
-        shard = make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir)
+        shard = make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_val)
 
         rel = get_or_make_release(repo, subdir, pkg)
 
