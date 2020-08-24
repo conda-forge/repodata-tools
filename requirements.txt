@@ -8,3 +8,4 @@ bzip2
 conda
 conda-build
 tenacity
+click
