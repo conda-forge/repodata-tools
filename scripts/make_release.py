@@ -62,8 +62,6 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir):
     shard["channeldata"] = copy.deepcopy(
         cd["packages"][rd["packages"][pkg]["name"]]
     )
-    shard["channeldata"]["subdirs"] = [subdir]
-    shard["channeldata"]["version"] = rd["packages"][pkg]["version"]
 
     return shard
 
@@ -241,17 +239,14 @@ if __name__ == "__main__":
     url = event_data['client_payload']["url"]
     label = event_data['client_payload']["label"]
     feedstock = event_data['client_payload']["feedstock"]
+    add_shard = event_data['client_payload'].get("add_shard", True)
     print("subdir/package: %s/%s" % (subdir, pkg), flush=True)
     print("url:", url, flush=True)
+    print("add shard:", add_shard, flush=True)
 
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
     repo = gh.get_repo("regro/releases")
-
-    # test if shard exists - if so, dump out
-    shard_pth = get_shard_path(subdir, pkg)
-    if shard_exists(shard_pth):
-        print("*** release already exists - not uploading again! ***", flush=True)
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -276,4 +271,6 @@ if __name__ == "__main__":
         )
 
     # push the repodata shard
-    push_shard(shard, shard_pth, subdir, pkg)
+    shard_pth = get_shard_path(subdir, pkg)
+    if add_shard and not shard_exists(shard_pth):
+        push_shard(shard, shard_pth, subdir, pkg)
