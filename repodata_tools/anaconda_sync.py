@@ -66,8 +66,9 @@ def _write_shards(
 
     cip1 = chunk_index + 1
     subprocess.run(
-        "git commit -m '[ci skip]  [cf admin skip] ***NO_CI*** "
-        f"chunk {cip1} of {total_chunks} {label}/{subdir}'",
+        "git commit -m "
+        f"'chunk {cip1} of {total_chunks} {label}/{subdir} "
+        "[ci skip]  [cf admin skip] ***NO_CI***'",
         shell=True,
         check=True,
     )
