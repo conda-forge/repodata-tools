@@ -80,7 +80,7 @@ def _write_shards(
     reraise=True,
 )
 def _push_repo():
-    subprocess.run("git pull", shell=True, check=True)
+    subprocess.run("git pull --rebase --no-edit", shell=True, check=True)
     subprocess.run("git push", shell=True, check=True)
 
 
