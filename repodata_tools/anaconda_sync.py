@@ -5,6 +5,7 @@ import random
 import subprocess
 import time
 
+import tenacity
 import click
 import rapidjson as json
 import requests
@@ -44,6 +45,42 @@ def _build_shard(subdir, pkg, label):
         )
 
     return shard
+
+
+def _write_shards(
+    shards_to_write, all_shards, chunk_index, total_chunks, label, subdir
+):
+    for subdir_pkg in shards_to_write:
+        pth = get_shard_path(*os.path.split(subdir_pkg))
+
+        if subdir_pkg in all_shards:
+            dir = os.path.dirname(pth)
+            os.makedirs(dir, exist_ok=True)
+
+            with open(pth, "w") as fp:
+                json.dump(
+                    all_shards[subdir_pkg], fp, sort_keys=True, indent=2
+                )
+
+        subprocess.run(f"git add {pth}", shell=True)
+
+    cip1 = chunk_index + 1
+    subprocess.run(
+        "git commit -m '[ci skip]  [cf admin skip] ***NO_CI*** "
+        f"chunk {cip1} of {total_chunks} {label}/{subdir}'",
+        shell=True,
+        check=True,
+    )
+
+
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=0.1, max=10),
+    stop=tenacity.stop_after_attempt(5),
+    reraise=True,
+)
+def _push_repo():
+    subprocess.run("git pull", shell=True, check=True)
+    subprocess.run("git push", shell=True, check=True)
 
 
 def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300):
@@ -149,43 +186,46 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                         all_shards[subdir_pkg] = shard
                         shards_to_write.add(subdir_pkg)
 
-                if shards_to_write:
-                    subprocess.run("git pull", shell=True)
-
-                    for subdir_pkg in shards_to_write:
-                        _, pkg = os.path.split(subdir_pkg)
-                        pth = get_shard_path(subdir, pkg)
-
-                        if subdir_pkg in all_shards:
-                            dir = os.path.dirname(pth)
-                            os.makedirs(dir, exist_ok=True)
-
-                            with open(pth, "w") as fp:
-                                json.dump(
-                                    all_shards[subdir_pkg], fp, sort_keys=True, indent=2
-                                )
-
-                        subprocess.run(f"git add {pth}", shell=True)
+                if len(shards_to_write) > 64 or time.time() - start_time > time_limit:
+                    _write_shards(
+                        shards_to_write,
+                        all_shards,
+                        chunk_index,
+                        total_chunks,
+                        label,
+                        subdir
+                    )
+                    shards_to_write = set()
 
                     try:
-                        cip1 = chunk_index + 1
-                        subprocess.run(
-                            "git commit -m '[ci skip]  [cf admin skip] ***NO_CI*** "
-                            f"chunk {cip1} of {total_chunks} {label}/{subdir}'",
-                            shell=True,
-                            check=True,
-                        )
-                        subprocess.run("git pull", shell=True, check=True)
-                        subprocess.run("git push", shell=True, check=True)
+                        _push_repo()
                     except Exception:
                         pass
-                    else:
-                        shards_to_write = set()
 
                 if time.time() - start_time > time_limit:
-                    return False
+                    try:
+                        _push_repo()
+                    except Exception:
+                        pass
 
-    return True
+                    return True
+
+    if shards_to_write:
+        _write_shards(
+            shards_to_write,
+            all_shards,
+            chunk_index,
+            total_chunks,
+            label,
+            subdir
+        )
+
+        try:
+            _push_repo()
+        except Exception:
+            pass
+
+    return False
 
 
 @click.command()
