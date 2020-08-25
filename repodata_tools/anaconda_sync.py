@@ -178,7 +178,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 
                 if jobs:
                     max_gb = max_bytes / 1000**3
-                    n_jobs = min(max(int(10.0 / max_gb), 1), 16)
+                    n_jobs = min(max(int(2.0 / max_gb), 1), 16)
                     print(
                         "using %d processes for %d jobs w/ max GB of %s" % (
                             n_jobs, len(jobs), max_gb
