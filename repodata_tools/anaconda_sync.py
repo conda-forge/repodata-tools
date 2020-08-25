@@ -239,7 +239,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 )
 @click.option(
     "--time-limit",
-    default=3300,
+    default=3000,
     type=int,
     help="The maximum time to run in seconds."
 )
