@@ -87,7 +87,7 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum
     os.makedirs(f"{tmpdir}/noarch", exist_ok=True)
     os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
     subprocess.run(
-        f"curl -L {url} > {tmpdir}/{subdir}/{pkg}",
+        f"curl  --no-progress-meter -L {url} > {tmpdir}/{subdir}/{pkg}",
         shell=True,
         check=True,
     )
