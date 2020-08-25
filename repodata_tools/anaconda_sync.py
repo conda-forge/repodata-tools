@@ -119,6 +119,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                 total=total_chunks,
             ):
                 jobs = []
+                max_bytes = 0
                 for pkg in pkg_chunk:
                     subdir_pkg = os.path.join(subdir, pkg)
 
@@ -154,6 +155,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                             break
 
                     if subdir_pkg not in all_shards:
+                        max_bytes = max(max_bytes, rd["packages"][pkg]["size"])
                         jobs.append(joblib.delayed(_build_shard)(
                             subdir, pkg, label
                         ))
@@ -175,13 +177,15 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                             shards_to_write.add(subdir_pkg)
 
                 if jobs:
-                    for n_jobs in [16, 8, 4, 2]:
-                        try:
-                            shards = joblib.Parallel(n_jobs=n_jobs, verbose=0)(jobs)
-                        except Exception:
-                            pass
-                        else:
-                            break
+                    max_gb = max_bytes / 1000**3
+                    n_jobs = min(max(int(10.0 / max_gb), 1), 16)
+                    print(
+                        "using %d processes for %d jobs w/ max GB of %s" % (
+                            n_jobs, len(jobs), max_gb
+                        ),
+                        flush=True,
+                    )
+                    shards = joblib.Parallel(n_jobs=n_jobs, verbose=0)(jobs)
                     for shard in shards:
                         subdir_pkg = os.path.join(shard["subdir"], shard["package"])
                         all_shards[subdir_pkg] = shard
