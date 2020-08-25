@@ -14,7 +14,7 @@ import joblib
 
 from .utils import chunk_iterable
 from .shards import (
-    make_repodata_shard,
+    make_repodata_shard_noretry,
     get_old_shard_path,
     get_shard_path,
     read_subdir_shards,
@@ -35,7 +35,7 @@ def _build_shard(subdir, pkg, label):
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        shard = make_repodata_shard(
+        shard = make_repodata_shard_noretry(
             subdir,
             pkg,
             label,
@@ -174,7 +174,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                             shards_to_write.add(subdir_pkg)
 
                 if jobs:
-                    for n_jobs in [16, 8, 4]:
+                    for n_jobs in [16, 8, 4, 2]:
                         try:
                             shards = joblib.Parallel(n_jobs=n_jobs, verbose=0)(jobs)
                         except Exception:

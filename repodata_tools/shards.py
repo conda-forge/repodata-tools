@@ -78,12 +78,9 @@ def read_subdir_shards(shards_repo, subdir, all_shards):
             all_shards[subdir_pkg] = shard
 
 
-@tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
-    reraise=True,
-)
-def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum=None):
+def make_repodata_shard_noretry(
+    subdir, pkg, label, feedstock, url, tmpdir, md5_checksum=None
+):
     os.makedirs(f"{tmpdir}/noarch", exist_ok=True)
     os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
     subprocess.run(
@@ -125,6 +122,16 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum
     )
 
     return shard
+
+
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
+    stop=tenacity.stop_after_attempt(10),
+    reraise=True,
+)
+def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum=None):
+    return make_repodata_shard_noretry(
+        subdir, pkg, label, feedstock, url, tmpdir, md5_checksum=md5_checksum)
 
 
 @tenacity.retry(
