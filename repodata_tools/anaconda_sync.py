@@ -203,11 +203,6 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                         pass
 
                 if time.time() - start_time > time_limit:
-                    try:
-                        _push_repo()
-                    except Exception:
-                        pass
-
                     return True
 
     if shards_to_write:
