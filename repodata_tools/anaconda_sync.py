@@ -111,6 +111,10 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                     "https://conda.anaconda.org/conda-forge/label/"
                     f"{label}/{subdir}/repodata.json"
                 )
+
+            if r.status_code != 200:
+                continue
+
             rd = r.json()
 
             os.makedirs(f"shards/{subdir}", exist_ok=True)
@@ -196,7 +200,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                         all_shards[subdir_pkg] = shard
                         shards_to_write.add(subdir_pkg)
 
-                if len(shards_to_write) > 64 or time.time() - start_time > time_limit:
+                if len(shards_to_write) > 1024 or time.time() - start_time > time_limit:
                     _write_shards(
                         shards_to_write,
                         all_shards,
