@@ -359,7 +359,7 @@ def upload_packages(
     help="The maximum time to run in seconds."
 )
 @click.option(
-    "--releases-repo-pth",
+    "--releases-repo-path",
     type=str,
     help="The path to the releases repo.",
     required=True,
