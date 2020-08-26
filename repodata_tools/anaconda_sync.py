@@ -414,6 +414,6 @@ def main(rank, n_ranks, time_limit, releases_repo_path):
         releases_repo_path,
         start_time,
         time_limit,
-        max_write=1,
+        max_write=200,
     )
     print(" ", flush=True)
