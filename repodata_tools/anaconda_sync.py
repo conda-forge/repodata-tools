@@ -4,7 +4,6 @@ import tempfile
 import subprocess
 import time
 import hmac
-import hashlib
 
 import tenacity
 import click
@@ -25,6 +24,7 @@ from .releases import (
     get_or_make_release,
     upload_asset
 )
+from .metadata import CONDA_FORGE_SUBIDRS
 
 
 def _build_shard(subdir, pkg, label):
@@ -94,10 +94,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
     shards_to_write = set()
     for label in tqdm.tqdm(labels, desc="labels"):
 
-        for loop_index, subdir in enumerate([
-            "linux-64", "osx-64", "win-64", "noarch",
-            "linux-aarch64", "linux-ppc64le", "osx-arm64"
-        ]):
+        for loop_index, subdir in enumerate(CONDA_FORGE_SUBIDRS):
             if loop_index % n_ranks != rank:
                 continue
 
@@ -309,10 +306,9 @@ def _write_shard(subdir_pkg, shard):
 def upload_packages(all_shards, rank, n_ranks, max_write=200):
     num_written = 0
     for subdir_pkg, shard in all_shards.items():
-        shard_index = hashlib.sha1(subdir_pkg.encode("utf-8")).digest()[0] % 4
-        if shard_index % n_ranks != rank:
-            continue
         subdir, pkg = os.path.split(subdir_pkg)
+        if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
+            continue
 
         if "conda.anaconda.org" in shard["url"]:
             _make_release(subdir, pkg, shard)
@@ -354,11 +350,7 @@ def main(rank, n_ranks, time_limit):
 
     all_shards = {}
     print("reading all shards", flush=True)
-    for subdir in [
-        "linux-64", "linux-aarch64", "linux-ppc64le",
-        "osx-64", "win-64",
-        "noarch", "osx-arm64"
-    ]:
+    for subdir in CONDA_FORGE_SUBIDRS:
         read_subdir_shards(".", subdir, all_shards)
     print(" ", flush=True)
 
@@ -393,6 +385,6 @@ def main(rank, n_ranks, time_limit):
     if quit:
         sys.exit(0)
 
-    # print("uploading releases", flush=True)
-    # upload_packages(all_shards, rank, n_ranks, max_write=200)
-    # print(" ", flush=True)
+    print("uploading releases", flush=True)
+    upload_packages(all_shards, rank, n_ranks, max_write=1)
+    print(" ", flush=True)
