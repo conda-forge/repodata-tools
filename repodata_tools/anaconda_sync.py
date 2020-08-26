@@ -1,23 +1,29 @@
 import os
 import sys
 import tempfile
-import random
 import subprocess
 import time
+import hmac
+import hashlib
 
 import tenacity
 import click
 import rapidjson as json
 import requests
 import tqdm
+import github
 import joblib
 
-from .utils import chunk_iterable
+from .utils import chunk_iterable, compute_md5
 from .shards import (
     make_repodata_shard_noretry,
     get_old_shard_path,
     get_shard_path,
     read_subdir_shards,
+)
+from .releases import (
+    get_or_make_release,
+    upload_asset
 )
 
 
@@ -109,8 +115,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 
             os.makedirs(f"shards/{subdir}", exist_ok=True)
 
-            all_pkgs = list(rd["packages"])
-            random.shuffle(all_pkgs)
+            all_pkgs = sorted(list(rd["packages"]))
 
             total_chunks = len(rd["packages"]) // 64 + 1
             for chunk_index, pkg_chunk in tqdm.tqdm(
@@ -228,6 +233,96 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
     return False
 
 
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=0.1, max=10),
+    stop=tenacity.stop_after_attempt(5),
+    reraise=True,
+)
+def _download_package(tmpdir, subdir, pkg, url, md5_checksum):
+    os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
+    subprocess.run(
+        f"curl  --no-progress-meter -L {url} > {tmpdir}/{subdir}/{pkg}",
+        shell=True,
+        check=True,
+    )
+
+    if md5_checksum is not None:
+        local_md5 = compute_md5(f"{tmpdir}/{subdir}/{pkg}")
+        if not hmac.compare_digest(local_md5, md5_checksum):
+            raise RuntimeError("md5 chechsum is incorrect! exiting!")
+
+
+def _make_release(subdir, pkg, shard):
+    gh = github.Github(os.environ["GITHUB_TOKEN"])
+    repo = gh.get_repo("regro/releases")
+
+    # make release and upload if shard does not exist
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _download_package(
+            tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
+        )
+        rel = get_or_make_release(repo, subdir, pkg)
+
+        ast = upload_asset(
+            rel,
+            f"{tmpdir}/{subdir}/{pkg}",
+            content_type="application/x-bzip2",
+        )
+
+        shard["url"] = ast.browser_download_url
+        with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
+            json.dump(shard, fp, sort_keys=True, indent=2)
+
+        ast = upload_asset(
+            rel,
+            f"{tmpdir}/repodata_shard.json",
+            content_type="application/json",
+        )
+
+
+def _write_shard(subdir_pkg, shard):
+    pth = get_shard_path(*os.path.split(subdir_pkg))
+
+    dir = os.path.dirname(pth)
+    os.makedirs(dir, exist_ok=True)
+
+    with open(pth, "w") as fp:
+        json.dump(
+            shard, fp, sort_keys=True, indent=2
+        )
+
+    subprocess.run(f"git add {pth}", shell=True)
+
+    subprocess.run(
+        "git commit -m "
+        f"'release update {subdir_pkg} "
+        "[ci skip]  [cf admin skip] ***NO_CI***'",
+        shell=True,
+        check=True,
+    )
+
+
+def upload_packages(all_shards, rank, n_ranks, max_write=200):
+    num_written = 0
+    for subdir_pkg, shard in all_shards.items():
+        shard_index = hashlib.sha1(subdir_pkg.encode("utf-8")).digest()[0] % 4
+        if shard_index % n_ranks != rank:
+            continue
+        subdir, pkg = os.path.split(subdir_pkg)
+
+        if "conda.anaconda.org" in shard["url"]:
+            _make_release(subdir, pkg, shard)
+            _write_shard(subdir_pkg, shard)
+            try:
+                _push_repo()
+            except Exception:
+                pass
+            num_written += 1
+
+        if num_written >= max_write:
+            break
+
+
 @click.command()
 @click.option(
     "--rank",
@@ -295,5 +390,5 @@ def main(rank, n_ranks, time_limit):
         sys.exit(0)
 
     # print("uploading releases", flush=True)
-    # upload_releases(labels, all_shards, rank, n_ranks, start_time)
+    # upload_packages(all_shards, rank, n_ranks, max_write=200)
     # print(" ", flush=True)
