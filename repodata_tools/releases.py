@@ -20,12 +20,12 @@ from .shards import (
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def get_or_make_release(repo, subdir, pkg):
+def get_or_make_release(repo, subdir, pkg, repo_pth=None):
     tag = f"{subdir}/{pkg}"
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
-        repo_sha = make_or_get_commit(subdir, pkg, make=True)
+        repo_sha = make_or_get_commit(subdir, pkg, make=True, repo_pth=repo_pth)
 
         rel = repo.create_git_tag_and_release(
             tag,
@@ -65,22 +65,22 @@ def upload_asset(rel, pth, content_type):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def make_or_get_commit(subdir, pkg, make=False):
+def make_or_get_commit(subdir, pkg, make=False, repo_pth="."):
     if make:
         subprocess.run(
-            "git pull",
+            f"cd {repo_pth} && git pull",
             shell=True,
             check=True,
         )
         subprocess.run(
-            "git commit --allow-empty -m "
-            "'%s/%s [ci skip] [cf admin skip] ***NO_CI***'" % (subdir, pkg),
+            f"cd {repo_pth} && git commit --allow-empty -m "
+            f"'{subdir}/{pkg} [ci skip] [cf admin skip] ***NO_CI***'",
             shell=True,
             check=True,
         )
 
     repo_sha = subprocess.run(
-        "git rev-parse --verify HEAD",
+        f"cd {repo_pth} && git rev-parse --verify HEAD",
         shell=True,
         capture_output=True,
     ).stdout.decode("utf-8").strip()
@@ -89,12 +89,12 @@ def make_or_get_commit(subdir, pkg, make=False):
         for i in range(10):
             try:
                 subprocess.run(
-                    "git pull",
+                    f"cd {repo_pth} && git pull",
                     shell=True,
                     check=True,
                 )
                 subprocess.run(
-                    "git push",
+                    f"cd {repo_pth} && git push",
                     shell=True,
                     check=True,
                 )

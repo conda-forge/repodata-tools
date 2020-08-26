@@ -1,9 +1,9 @@
 import os
-import sys
 import tempfile
 import subprocess
 import time
 import hmac
+import sys
 
 import tenacity
 import click
@@ -253,7 +253,7 @@ def _download_package(tmpdir, subdir, pkg, url, md5_checksum):
             raise RuntimeError("md5 chechsum is incorrect! exiting!")
 
 
-def _make_release(subdir, pkg, shard):
+def _make_release(subdir, pkg, shard, repo_pth):
     gh = github.Github(os.environ["GITHUB_TOKEN"])
     repo = gh.get_repo("regro/releases")
 
@@ -262,7 +262,7 @@ def _make_release(subdir, pkg, shard):
         _download_package(
             tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
         )
-        rel = get_or_make_release(repo, subdir, pkg)
+        rel = get_or_make_release(repo, subdir, pkg, repo_pth=repo_pth)
 
         ast = upload_asset(
             rel,
@@ -303,7 +303,9 @@ def _write_shard(subdir_pkg, shard):
     )
 
 
-def upload_packages(all_shards, rank, n_ranks, max_write=200):
+def upload_packages(
+    all_shards, rank, n_ranks, repo_pth, start_time, time_limit, max_write=200
+):
     num_written = 0
     for subdir_pkg, shard in all_shards.items():
         subdir, pkg = os.path.split(subdir_pkg)
@@ -313,7 +315,7 @@ def upload_packages(all_shards, rank, n_ranks, max_write=200):
         if "conda.anaconda.org" in shard["url"]:
             did_it = False
             try:
-                _make_release(subdir, pkg, shard)
+                _make_release(subdir, pkg, shard, repo_pth)
             except Exception:
                 pass
             else:
@@ -327,7 +329,7 @@ def upload_packages(all_shards, rank, n_ranks, max_write=200):
                     except Exception:
                         pass
 
-        if num_written >= max_write:
+        if num_written >= max_write or time.time() - start_time > time_limit:
             break
 
     if num_written > 0:
@@ -356,9 +358,14 @@ def upload_packages(all_shards, rank, n_ranks, max_write=200):
     type=int,
     help="The maximum time to run in seconds."
 )
-def main(rank, n_ranks, time_limit):
-    """Sync anaconda repodata shards w/ a local copy and upload packages to
-    GitHub.
+@click.option(
+    "--releases-repo-pth",
+    type=str,
+    help="The path to the releases repo.",
+    required=True,
+)
+def main(rank, n_ranks, time_limit, releases_repo_path):
+    """Sync anaconda repodata shards w/ a local copy and upload packages.
     """
     start_time = time.time()
 
@@ -386,7 +393,7 @@ def main(rank, n_ranks, time_limit):
     print(" ", flush=True)
 
     print("updating shards", flush=True)
-    quit = update_shards(
+    update_shards(
         labels,
         all_shards,
         rank,
@@ -396,9 +403,17 @@ def main(rank, n_ranks, time_limit):
     )
     print(" ", flush=True)
 
-    if quit:
+    if time.time() - start_time > time_limit:
         sys.exit(0)
 
     print("uploading releases", flush=True)
-    upload_packages(all_shards, rank, n_ranks, max_write=1)
+    upload_packages(
+        all_shards,
+        rank,
+        n_ranks,
+        releases_repo_path,
+        start_time,
+        time_limit,
+        max_write=1,
+    )
     print(" ", flush=True)
