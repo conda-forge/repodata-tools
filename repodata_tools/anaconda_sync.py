@@ -311,16 +311,30 @@ def upload_packages(all_shards, rank, n_ranks, max_write=200):
             continue
 
         if "conda.anaconda.org" in shard["url"]:
-            _make_release(subdir, pkg, shard)
-            _write_shard(subdir_pkg, shard)
+            did_it = False
             try:
-                _push_repo()
+                _make_release(subdir, pkg, shard)
             except Exception:
                 pass
-            num_written += 1
+            else:
+                _write_shard(subdir_pkg, shard)
+                num_written += 1
+                did_it = True
+            finally:
+                if did_it:
+                    try:
+                        _push_repo()
+                    except Exception:
+                        pass
 
         if num_written >= max_write:
             break
+
+    if num_written > 0:
+        try:
+            _push_repo()
+        except Exception:
+            pass
 
 
 @click.command()
