@@ -71,7 +71,7 @@ def _write_shards(shards_to_write, all_shards, msg):
         subprocess.run(f"git add {pth}", shell=True)
 
     subprocess.run(
-        f"git commit -m '{msg} [ci skip] [cf admin skip] ***NO_CI***'",
+        f"git commit --allow-empty -m '{msg} [ci skip] [cf admin skip] ***NO_CI***'",
         shell=True,
         check=True,
     )
