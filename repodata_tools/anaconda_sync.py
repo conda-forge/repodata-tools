@@ -278,7 +278,7 @@ def _make_release(subdir, pkg, shard, repo_pth):
 
 
 def upload_packages(
-    all_shards, rank, n_ranks, start_time, time_limit, max_write=200
+    all_shards, rank, n_ranks, start_time, time_limit, max_write=400
 ):
     with tempfile.TemporaryDirectory() as tmpdir:
         Repo.clone_from("https://github.com/regro/releases.git", tmpdir)
@@ -394,6 +394,6 @@ def main(rank, n_ranks, time_limit):
         n_ranks,
         start_time,
         time_limit,
-        max_write=200,
+        max_write=400,
     )
     print(" ", flush=True)
