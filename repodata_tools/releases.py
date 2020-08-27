@@ -68,7 +68,7 @@ def upload_asset(rel, pth, content_type):
 def make_or_get_commit(subdir, pkg, make=False, repo_pth="."):
     if make:
         subprocess.run(
-            f"cd {repo_pth} && git pull",
+            f"cd {repo_pth} && git --no-edit pull",
             shell=True,
             check=True,
         )
@@ -89,7 +89,7 @@ def make_or_get_commit(subdir, pkg, make=False, repo_pth="."):
         for i in range(10):
             try:
                 subprocess.run(
-                    f"cd {repo_pth} && git pull",
+                    f"cd {repo_pth} && git --no-edit pull",
                     shell=True,
                     check=True,
                 )
@@ -126,7 +126,7 @@ def main():
         check=True,
     )
     subprocess.run(
-        "git config --global pull.rebase true",
+        "git config --global pull.rebase false",
         shell=True,
         check=True,
     )

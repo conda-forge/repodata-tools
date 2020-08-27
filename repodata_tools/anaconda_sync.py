@@ -83,7 +83,7 @@ def _write_shards(shards_to_write, all_shards, msg):
     reraise=True,
 )
 def _push_repo():
-    subprocess.run("git pull --rebase --no-edit", shell=True, check=True)
+    subprocess.run("git pull --no-edit", shell=True, check=True)
     subprocess.run("git push", shell=True, check=True)
 
 
@@ -290,7 +290,7 @@ def upload_packages(
         )
         shards_to_write = set()
         pkgs = sorted(list(all_shards))
-        for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs)):
+        for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs), total=len(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)
             if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
                 continue
@@ -304,6 +304,7 @@ def upload_packages(
                 else:
                     all_shards[subdir_pkg] = shard
                     shards_to_write.add(subdir_pkg)
+                    print("made %d releases" % len(shards_to_write), flush=True)
 
             if (
                 len(shards_to_write) >= max_write
