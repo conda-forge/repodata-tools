@@ -30,27 +30,31 @@ from .metadata import CONDA_FORGE_SUBIDRS
 
 
 def _build_shard(subdir, pkg, label):
-    subdir_pkg = os.path.join(subdir, pkg)
-    if label == "main":
-        url = (
-            "https://conda.anaconda.org/conda-forge"
-            f"/{subdir_pkg}"
-        )
-    else:
-        url = (
-            "https://conda.anaconda.org/conda-forge"
-            f"/label/{label}/{subdir_pkg}"
-        )
+    try:
+        subdir_pkg = os.path.join(subdir, pkg)
+        if label == "main":
+            url = (
+                "https://conda.anaconda.org/conda-forge"
+                f"/{subdir_pkg}"
+            )
+        else:
+            url = (
+                "https://conda.anaconda.org/conda-forge"
+                f"/label/{label}/{subdir_pkg}"
+            )
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        shard = make_repodata_shard_noretry(
-            subdir,
-            pkg,
-            label,
-            None,
-            url,
-            tmpdir,
-        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shard = make_repodata_shard_noretry(
+                subdir,
+                pkg,
+                label,
+                None,
+                url,
+                tmpdir,
+            )
+    except Exception as e:
+        print("\n\n\nERROR: %s\n\n\n" % subdir_pkg, flush=True)
+        raise e
 
     return shard
 
@@ -88,6 +92,10 @@ def _push_repo():
 
 
 def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300):
+    cd = requests.get(
+            "https://conda.anaconda.org/conda-forge/channeldata.json"
+        ).json()
+
     shards_to_write = set()
     for label in tqdm.tqdm(labels, desc="labels"):
 
@@ -191,6 +199,30 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                     shards = joblib.Parallel(n_jobs=n_jobs, verbose=0)(jobs)
                     for shard in shards:
                         subdir_pkg = os.path.join(shard["subdir"], shard["package"])
+
+                        # sometimes conda index chokes on a package, so we put in the
+                        # data we have by hand
+                        if (
+                            shard["repodata"] is None
+                            and shard["package"] in rd["packages"]
+                        ):
+                            shard["repodata_version"] = rd.get("repodata_version", 1)
+                            shard["repodata"] = copy.deepcopy(rd["packages"][pkg])
+
+                        if (
+                            shard["channeldata"] is None
+                            and shard["repodata"] is not None
+                            and shard["repodata"]["name"] in cd["packages"]
+                        ):
+                            shard["channeldata_version"] = cd["channeldata_version"]
+                            shard["channeldata"] = copy.deepcopy(
+                                cd["packages"][shard["repodata"]["name"]]
+                            )
+                            shard["channeldata"]["subdirs"] = [subdir]
+                            shard["channeldata"]["version"] = (
+                                shard["repodata"]["version"]
+                            )
+
                         all_shards[subdir_pkg] = shard
                         shards_to_write.add(subdir_pkg)
 

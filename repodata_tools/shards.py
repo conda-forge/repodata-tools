@@ -12,6 +12,7 @@ import tenacity
 import requests
 
 from .utils import chunk_iterable, compute_md5, split_pkg
+from .metadata import UNINDEXABLE
 
 
 def get_old_shard_path(subdir, pkg, n_dirs=12):
@@ -101,32 +102,47 @@ def make_repodata_shard_noretry(
         if not hmac.compare_digest(local_md5, md5_checksum):
             raise RuntimeError("md5 chechsum is incorrect! exiting!")
 
-    subprocess.run(
-        f"conda index --no-progress {tmpdir}",
-        shell=True,
-        check=True,
-    )
+    try:
+        subprocess.run(
+            f"conda index --no-progress {tmpdir}",
+            shell=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        if os.path.join(subdir, pkg) in UNINDEXABLE:
+            cd = None
+            rd = None
+        else:
+            raise e
+    else:
+        with open(f"{tmpdir}/channeldata.json", "r") as fp:
+            cd = json.load(fp)
 
-    with open(f"{tmpdir}/channeldata.json", "r") as fp:
-        cd = json.load(fp)
-
-    with open(f"{tmpdir}/{subdir}/repodata.json", "r") as fp:
-        rd = json.load(fp)
+        with open(f"{tmpdir}/{subdir}/repodata.json", "r") as fp:
+            rd = json.load(fp)
 
     shard = {}
     shard["labels"] = [label]
-    shard["repodata_version"] = rd["repodata_version"]
-    shard["repodata"] = copy.deepcopy(rd["packages"][pkg])
     shard["subdir"] = subdir
     shard["package"] = pkg
     shard["url"] = url
     shard["feedstock"] = feedstock
 
-    # we are hacking at this
-    shard["channeldata_version"] = cd["channeldata_version"]
-    shard["channeldata"] = copy.deepcopy(
-        cd["packages"][rd["packages"][pkg]["name"]]
-    )
+    if rd is not None:
+        shard["repodata_version"] = rd["repodata_version"]
+        shard["repodata"] = copy.deepcopy(rd["packages"][pkg])
+    else:
+        shard["repodata_version"] = None
+        shard["repodata"] = None
+
+    if cd is not None:
+        shard["channeldata_version"] = cd["channeldata_version"]
+        shard["channeldata"] = copy.deepcopy(
+            cd["packages"][rd["packages"][pkg]["name"]]
+        )
+    else:
+        shard["channeldata_version"] = None
+        shard["channeldata"] = None
 
     return shard
 
