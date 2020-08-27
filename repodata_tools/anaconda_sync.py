@@ -341,7 +341,7 @@ def upload_packages(
 )
 @click.option(
     "--time-limit",
-    default=3000,
+    default=2700,
     type=int,
     help="The maximum time to run in seconds."
 )
