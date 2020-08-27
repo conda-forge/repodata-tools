@@ -314,7 +314,12 @@ def upload_packages(
 ):
     with tempfile.TemporaryDirectory() as tmpdir:
         Repo.clone_from("https://github.com/regro/releases.git", tmpdir)
-
+        subprocess.run(
+            f"cd {tmpdir} && git remote set-url --push origin "
+            "https://${GITHUB_TOKEN}@github.com/regro/releases.git",
+            shell=True,
+            check=True,
+        )
         num_written = 0
         for subdir_pkg, shard in tqdm.tqdm(all_shards.items()):
             subdir, pkg = os.path.split(subdir_pkg)
