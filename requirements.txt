@@ -9,3 +9,4 @@ conda
 conda-build
 tenacity
 click
+gitpython

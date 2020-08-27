@@ -5,6 +5,7 @@ import time
 import hmac
 import sys
 
+from git import Repo
 import tenacity
 import click
 import rapidjson as json
@@ -13,7 +14,7 @@ import tqdm
 import github
 import joblib
 
-from .utils import chunk_iterable, compute_md5
+from .utils import chunk_iterable, compute_md5, split_pkg
 from .shards import (
     make_repodata_shard_noretry,
     get_old_shard_path,
@@ -241,8 +242,13 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 )
 def _download_package(tmpdir, subdir, pkg, url, md5_checksum):
     os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
+    r = requests.head(url)
+    if r.status_code != 200:
+        _, name, ver, _ = split_pkg(os.path.join(subdir, pkg))
+        url = f"https://anaconda.org/conda-forge/{name}/{ver}/download/{subdir}/{pkg}"
+
     subprocess.run(
-        f"curl  --no-progress-meter -L {url} > {tmpdir}/{subdir}/{pkg}",
+        f"curl --no-progress-meter -L {url} > {tmpdir}/{subdir}/{pkg}",
         shell=True,
         check=True,
     )
@@ -297,46 +303,43 @@ def _write_shard(subdir_pkg, shard):
     subprocess.run(
         "git commit -m "
         f"'release update {subdir_pkg} "
-        "[ci skip]  [cf admin skip] ***NO_CI***'",
+        "[ci skip] [cf admin skip] ***NO_CI***'",
         shell=True,
         check=True,
     )
 
 
 def upload_packages(
-    all_shards, rank, n_ranks, repo_pth, start_time, time_limit, max_write=200
+    all_shards, rank, n_ranks, start_time, time_limit, max_write=200
 ):
-    num_written = 0
-    for subdir_pkg, shard in all_shards.items():
-        subdir, pkg = os.path.split(subdir_pkg)
-        if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
-            continue
+    with tempfile.TemporaryDirectory() as tmpdir:
+        Repo.clone_from("https://github.com/regro/releases.git", tmpdir)
 
-        if "conda.anaconda.org" in shard["url"]:
-            did_it = False
+        num_written = 0
+        for subdir_pkg, shard in tqdm.tqdm(all_shards.items()):
+            subdir, pkg = os.path.split(subdir_pkg)
+            if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
+                continue
+
+            if "conda.anaconda.org" in shard["url"]:
+                try:
+                    _make_release(subdir, pkg, shard, tmpdir)
+                except Exception:
+                    pass
+                else:
+                    _write_shard(subdir_pkg, shard)
+                    num_written += 1
+
+            if num_written >= max_write or time.time() - start_time > time_limit:
+                break
+
+        if num_written > 0:
             try:
-                _make_release(subdir, pkg, shard, repo_pth)
+                _push_repo()
             except Exception:
                 pass
-            else:
-                _write_shard(subdir_pkg, shard)
-                num_written += 1
-                did_it = True
-            finally:
-                if did_it:
-                    try:
-                        _push_repo()
-                    except Exception:
-                        pass
 
-        if num_written >= max_write or time.time() - start_time > time_limit:
-            break
-
-    if num_written > 0:
-        try:
-            _push_repo()
-        except Exception:
-            pass
+    print("made %d releases" % num_written, flush=True)
 
 
 @click.command()
@@ -358,13 +361,7 @@ def upload_packages(
     type=int,
     help="The maximum time to run in seconds."
 )
-@click.option(
-    "--releases-repo-path",
-    type=str,
-    help="The path to the releases repo.",
-    required=True,
-)
-def main(rank, n_ranks, time_limit, releases_repo_path):
+def main(rank, n_ranks, time_limit):
     """Sync anaconda repodata shards w/ a local copy and upload packages.
     """
     start_time = time.time()
@@ -411,7 +408,6 @@ def main(rank, n_ranks, time_limit, releases_repo_path):
         all_shards,
         rank,
         n_ranks,
-        releases_repo_path,
         start_time,
         time_limit,
         max_write=200,

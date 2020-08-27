@@ -11,7 +11,7 @@ import joblib
 import tenacity
 import requests
 
-from .utils import chunk_iterable, compute_md5
+from .utils import chunk_iterable, compute_md5, split_pkg
 
 
 def get_old_shard_path(subdir, pkg, n_dirs=12):
@@ -83,6 +83,13 @@ def make_repodata_shard_noretry(
 ):
     os.makedirs(f"{tmpdir}/noarch", exist_ok=True)
     os.makedirs(f"{tmpdir}/{subdir}", exist_ok=True)
+
+    # sometimes the urls fail, so we try the one you get out of the web UI
+    r = requests.head(url)
+    if r.status_code != 200:
+        _, name, ver, _ = split_pkg(os.path.join(subdir, pkg))
+        url = f"https://anaconda.org/conda-forge/{name}/{ver}/download/{subdir}/{pkg}"
+
     subprocess.run(
         f"curl  --no-progress-meter -L {url} > {tmpdir}/{subdir}/{pkg}",
         shell=True,
