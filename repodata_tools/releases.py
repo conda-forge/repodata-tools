@@ -65,7 +65,9 @@ def upload_asset(rel, pth, content_type):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def make_or_get_commit(subdir, pkg, make=False, repo_pth="."):
+def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
+    if repo_pth is None:
+        repo_pth = "."
     if make:
         subprocess.run(
             f"cd {repo_pth} && git --no-edit pull",
