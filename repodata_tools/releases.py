@@ -70,7 +70,7 @@ def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
         repo_pth = "."
     if make:
         subprocess.run(
-            f"cd {repo_pth} && git --no-edit pull",
+            f"cd {repo_pth} && git pull --no-edit",
             shell=True,
             check=True,
         )
@@ -91,7 +91,7 @@ def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
         for i in range(10):
             try:
                 subprocess.run(
-                    f"cd {repo_pth} && git --no-edit pull",
+                    f"cd {repo_pth} && git pull --no-edit",
                     shell=True,
                     check=True,
                 )
