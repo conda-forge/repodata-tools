@@ -3,6 +3,7 @@ import tempfile
 import subprocess
 import time
 import hmac
+import copy
 import sys
 
 from git import Repo
@@ -54,9 +55,7 @@ def _build_shard(subdir, pkg, label):
     return shard
 
 
-def _write_shards(
-    shards_to_write, all_shards, chunk_index, total_chunks, label, subdir
-):
+def _write_shards(shards_to_write, all_shards, msg):
     for subdir_pkg in shards_to_write:
         pth = get_shard_path(*os.path.split(subdir_pkg))
 
@@ -71,11 +70,8 @@ def _write_shards(
 
         subprocess.run(f"git add {pth}", shell=True)
 
-    cip1 = chunk_index + 1
     subprocess.run(
-        "git commit -m "
-        f"'chunk {cip1} of {total_chunks} {label}/{subdir} "
-        "[ci skip]  [cf admin skip] ***NO_CI***'",
+        f"git commit -m '{msg} [ci skip] [cf admin skip] ***NO_CI***'",
         shell=True,
         check=True,
     )
@@ -202,10 +198,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                     _write_shards(
                         shards_to_write,
                         all_shards,
-                        chunk_index,
-                        total_chunks,
-                        label,
-                        subdir
+                        f"chunk {chunk_index + 1} of {total_chunks} {label}/{subdir}",
                     )
                     shards_to_write = set()
 
@@ -221,10 +214,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
         _write_shards(
             shards_to_write,
             all_shards,
-            chunk_index,
-            total_chunks,
-            label,
-            subdir
+            f"chunk {chunk_index + 1} of {total_chunks} {label}/{subdir}",
         )
 
         try:
@@ -287,28 +277,6 @@ def _make_release(subdir, pkg, shard, repo_pth):
         )
 
 
-def _write_shard(subdir_pkg, shard):
-    pth = get_shard_path(*os.path.split(subdir_pkg))
-
-    dir = os.path.dirname(pth)
-    os.makedirs(dir, exist_ok=True)
-
-    with open(pth, "w") as fp:
-        json.dump(
-            shard, fp, sort_keys=True, indent=2
-        )
-
-    subprocess.run(f"git add {pth}", shell=True)
-
-    subprocess.run(
-        "git commit -m "
-        f"'release update {subdir_pkg} "
-        "[ci skip] [cf admin skip] ***NO_CI***'",
-        shell=True,
-        check=True,
-    )
-
-
 def upload_packages(
     all_shards, rank, n_ranks, start_time, time_limit, max_write=200
 ):
@@ -320,31 +288,41 @@ def upload_packages(
             shell=True,
             check=True,
         )
-        num_written = 0
-        for subdir_pkg, shard in tqdm.tqdm(all_shards.items()):
+        shards_to_write = set()
+        pkgs = sorted(list(all_shards))
+        for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)
             if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
                 continue
 
-            if "conda.anaconda.org" in shard["url"]:
+            if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
                 try:
+                    shard = copy.deepcopy(all_shards[subdir_pkg])
                     _make_release(subdir, pkg, shard, tmpdir)
                 except Exception:
                     pass
                 else:
-                    _write_shard(subdir_pkg, shard)
-                    num_written += 1
+                    all_shards[subdir_pkg] = shard
+                    shards_to_write.add(subdir_pkg)
 
-            if num_written >= max_write or time.time() - start_time > time_limit:
+            if (
+                len(shards_to_write) >= max_write
+                or time.time() - start_time > time_limit
+            ):
                 break
 
-        if num_written > 0:
+        if len(shards_to_write) > 0:
+            _write_shards(
+                shards_to_write,
+                all_shards,
+                f"release {pkg_index+1} of {len(pkgs)} for {subdir}",
+            )
             try:
                 _push_repo()
             except Exception:
                 pass
 
-    print("made %d releases" % num_written, flush=True)
+    print("made %d releases" % len(shards_to_write), flush=True)
 
 
 @click.command()
