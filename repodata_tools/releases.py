@@ -20,12 +20,17 @@ from .shards import (
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def get_or_make_release(repo, subdir, pkg, repo_pth=None):
+def get_or_make_release(repo, subdir, pkg, repo_pth=None, make_commit=True):
     tag = f"{subdir}/{pkg}"
     try:
         rel = repo.get_release(tag)
     except github.UnknownObjectException:
-        repo_sha = make_or_get_commit(subdir, pkg, make=True, repo_pth=repo_pth)
+        repo_sha = make_or_get_commit(
+            subdir,
+            pkg,
+            make_commit=make_commit,
+            repo_pth=repo_pth,
+        )
 
         rel = repo.create_git_tag_and_release(
             tag,
@@ -65,10 +70,10 @@ def upload_asset(rel, pth, content_type):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
+def make_or_get_commit(subdir, pkg, make_commit=False, repo_pth=None):
     if repo_pth is None:
         repo_pth = "."
-    if make:
+    if make_commit:
         subprocess.run(
             f"cd {repo_pth} && git pull --no-edit",
             shell=True,
@@ -87,7 +92,7 @@ def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
         capture_output=True,
     ).stdout.decode("utf-8").strip()
 
-    if make:
+    if make_commit:
         subprocess.run(
             f"cd {repo_pth} && git pull --no-edit",
             shell=True,

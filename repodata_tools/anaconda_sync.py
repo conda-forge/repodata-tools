@@ -290,7 +290,13 @@ def _make_release(subdir, pkg, shard, repo_pth):
         _download_package(
             tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
         )
-        rel = get_or_make_release(repo, subdir, pkg, repo_pth=repo_pth)
+        rel = get_or_make_release(
+            repo,
+            subdir,
+            pkg,
+            repo_pth=repo_pth,
+            make_commit=False,
+        )
 
         ast = upload_asset(
             rel,
