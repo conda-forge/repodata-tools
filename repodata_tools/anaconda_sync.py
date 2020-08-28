@@ -340,7 +340,6 @@ def upload_packages(
                     print("releasing %s..." % subdir_pkg, flush=True)
                     shard = copy.deepcopy(all_shards[subdir_pkg])
                     _make_release(subdir, pkg, shard, tmpdir)
-                    time.sleep(random.uniform(4.0, 6.0))
                 except RateLimitExceededException:
                     print(
                         "\n\nGitHub API rate limit exceeded - exiting\n\n",
@@ -354,6 +353,8 @@ def upload_packages(
                     all_shards[subdir_pkg] = shard
                     shards_to_write.add(subdir_pkg)
                     print("made %d releases" % len(shards_to_write), flush=True)
+                finally:
+                    time.sleep(random.uniform(4.0, 6.0))
 
             if (
                 len(shards_to_write) >= max_write
