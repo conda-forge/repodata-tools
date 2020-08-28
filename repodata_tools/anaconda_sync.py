@@ -5,6 +5,7 @@ import time
 import hmac
 import copy
 import sys
+import random
 
 from git import Repo
 import tenacity
@@ -14,6 +15,7 @@ import requests
 import tqdm
 import github
 import joblib
+from github import RateLimitExceededException
 
 from .utils import chunk_iterable, compute_md5, split_pkg
 from .shards import (
@@ -337,7 +339,15 @@ def upload_packages(
                 try:
                     shard = copy.deepcopy(all_shards[subdir_pkg])
                     _make_release(subdir, pkg, shard, tmpdir)
-                except Exception:
+                    time.sleep(random.uniform(4.0, 6.0))
+                except RateLimitExceededException:
+                    print(
+                        "\n\nGitHub API rate limit exceeded - exiting\n\n",
+                        flush=True,
+                    )
+                    break
+                except Exception as e:
+                    print("\n\nERROR: %s\n\n" % repr(e), flush=True)
                     pass
                 else:
                     all_shards[subdir_pkg] = shard
