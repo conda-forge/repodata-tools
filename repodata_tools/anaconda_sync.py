@@ -354,7 +354,7 @@ def upload_packages(
                     shards_to_write.add(subdir_pkg)
                     print("made %d releases" % len(shards_to_write), flush=True)
                 finally:
-                    time.sleep(random.uniform(4.0, 6.0))
+                    time.sleep(random.uniform(3.0, 4.0))
 
             if (
                 len(shards_to_write) >= max_write
