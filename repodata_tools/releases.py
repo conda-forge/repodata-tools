@@ -88,23 +88,16 @@ def make_or_get_commit(subdir, pkg, make=False, repo_pth=None):
     ).stdout.decode("utf-8").strip()
 
     if make:
-        for i in range(10):
-            try:
-                subprocess.run(
-                    f"cd {repo_pth} && git pull --no-edit",
-                    shell=True,
-                    check=True,
-                )
-                subprocess.run(
-                    f"cd {repo_pth} && git push",
-                    shell=True,
-                    check=True,
-                )
-            except Exception:
-                if i == 9:
-                    raise
-            else:
-                break
+        subprocess.run(
+            f"cd {repo_pth} && git pull --no-edit",
+            shell=True,
+            check=True,
+        )
+        subprocess.run(
+            f"cd {repo_pth} && git push",
+            shell=True,
+            check=True,
+        )
 
     return repo_sha
 
@@ -118,7 +111,8 @@ def main():
     """
     # configure git
     subprocess.run(
-        "git config --global user.email 'conda.forge.daemon@gmail.com'",
+        "git config --global user.email "
+        "'64793534+conda-forge-daemon@users.noreply.github.com'",
         shell=True,
         check=True,
     )
