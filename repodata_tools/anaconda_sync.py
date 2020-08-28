@@ -329,7 +329,11 @@ def upload_packages(
             check=True,
         )
         shards_to_write = set()
-        pkgs = sorted(list(all_shards))
+        pkgs = sorted([
+            subdir_pkg
+            for subdir_pkg in all_shards
+            if CONDA_FORGE_SUBIDRS.index(os.path.split(subdir_pkg)[0]) % n_ranks == rank
+        ])
         for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs), total=len(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)
             if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
