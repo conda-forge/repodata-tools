@@ -337,6 +337,7 @@ def upload_packages(
 
             if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
                 try:
+                    print("releasing %s..." % subdir_pkg, flush=True)
                     shard = copy.deepcopy(all_shards[subdir_pkg])
                     _make_release(subdir, pkg, shard, tmpdir)
                     time.sleep(random.uniform(4.0, 6.0))
