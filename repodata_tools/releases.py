@@ -41,7 +41,9 @@ def get_or_make_release(repo, subdir, pkg, repo_pth=None, make_commit=True):
             "commit",
         )
 
-    return rel
+    curr_asts = [ast for ast in rel.get_assets()]
+
+    return rel, curr_asts
 
 
 @tenacity.retry(
@@ -49,10 +51,10 @@ def get_or_make_release(repo, subdir, pkg, repo_pth=None, make_commit=True):
     stop=tenacity.stop_after_attempt(10),
     reraise=True,
 )
-def upload_asset(rel, pth, content_type):
+def upload_asset(rel, curr_asts, pth, content_type):
     name = os.path.basename(pth)
     ast = None
-    for _ast in rel.get_assets():
+    for _ast in curr_asts:
         if _ast.name == name:
             ast = _ast
             break
@@ -61,6 +63,7 @@ def upload_asset(rel, pth, content_type):
 
     if ast is None:
         ast = rel.upload_asset(pth, content_type=content_type)
+        curr_asts.append(ast)
 
     return ast
 
@@ -165,10 +168,11 @@ def main():
             md5_checksum=md5_val,
         )
 
-        rel = get_or_make_release(repo, subdir, pkg)
+        rel, curr_asts = get_or_make_release(repo, subdir, pkg)
 
         ast = upload_asset(
             rel,
+            curr_asts,
             f"{tmpdir}/{subdir}/{pkg}",
             content_type="application/x-bzip2",
         )
@@ -177,8 +181,9 @@ def main():
         with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
             json.dump(shard, fp, sort_keys=True, indent=2)
 
-        ast = upload_asset(
+        upload_asset(
             rel,
+            curr_asts,
             f"{tmpdir}/repodata_shard.json",
             content_type="application/json",
         )

@@ -283,16 +283,13 @@ def _download_package(tmpdir, subdir, pkg, url, md5_checksum):
             raise RuntimeError("md5 chechsum is incorrect! exiting!")
 
 
-def _make_release(subdir, pkg, shard, repo_pth):
-    gh = github.Github(os.environ["GITHUB_TOKEN"])
-    repo = gh.get_repo("regro/releases")
-
+def _make_release(subdir, pkg, shard, repo, repo_pth):
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
         _download_package(
             tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
         )
-        rel = get_or_make_release(
+        rel, curr_asts = get_or_make_release(
             repo,
             subdir,
             pkg,
@@ -302,6 +299,7 @@ def _make_release(subdir, pkg, shard, repo_pth):
 
         ast = upload_asset(
             rel,
+            curr_asts,
             f"{tmpdir}/{subdir}/{pkg}",
             content_type="application/x-bzip2",
         )
@@ -310,8 +308,9 @@ def _make_release(subdir, pkg, shard, repo_pth):
         with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
             json.dump(shard, fp, sort_keys=True, indent=2)
 
-        ast = upload_asset(
+        upload_asset(
             rel,
+            curr_asts,
             f"{tmpdir}/repodata_shard.json",
             content_type="application/json",
         )
@@ -320,6 +319,10 @@ def _make_release(subdir, pkg, shard, repo_pth):
 def upload_packages(
     all_shards, rank, n_ranks, start_time, time_limit, max_write=400
 ):
+
+    gh = github.Github(os.environ["GITHUB_TOKEN"])
+    repo = gh.get_repo("regro/releases")
+
     with tempfile.TemporaryDirectory() as tmpdir:
         Repo.clone_from("https://github.com/regro/releases.git", tmpdir)
         subprocess.run(
@@ -343,7 +346,7 @@ def upload_packages(
                 try:
                     print("releasing %s..." % subdir_pkg, flush=True)
                     shard = copy.deepcopy(all_shards[subdir_pkg])
-                    _make_release(subdir, pkg, shard, tmpdir)
+                    _make_release(subdir, pkg, shard, repo, tmpdir)
                 except RateLimitExceededException:
                     print(
                         "\n\nGitHub API rate limit exceeded - exiting\n\n",
