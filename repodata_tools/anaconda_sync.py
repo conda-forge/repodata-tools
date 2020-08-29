@@ -452,6 +452,12 @@ def main(rank, n_ranks, time_limit):
         sys.exit(0)
 
     print("uploading releases", flush=True)
+
+    try:
+        _push_repo()
+    except Exception:
+        pass
+
     upload_packages(
         all_shards,
         rank,
