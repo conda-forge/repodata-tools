@@ -1,5 +1,6 @@
 import hashlib
 import os
+import datetime
 
 
 def split_pkg(pkg):
@@ -43,3 +44,18 @@ def chunk_iterable(iterable, chunk_size):
             if chunk:
                 yield chunk
             break
+
+
+def print_github_api_limits(gh):
+    # modified from the webservices repo
+    remaining = gh.get_rate_limit().core.remaining
+    total = gh.get_rate_limit().core.limit
+    reset_time = gh.get_rate_limit().core.reset
+    reset_time -= datetime.utcnow()
+
+    print("===================================================", flush=True)
+    print("===================================================", flush=True)
+    print("remaining requests: %d of %d" % (remaining, total), flush=True)
+    print("reset time: %s" % reset_time, flush=True)
+    print("===================================================", flush=True)
+    print("===================================================", flush=True)

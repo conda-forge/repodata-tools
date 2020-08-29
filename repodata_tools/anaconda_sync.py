@@ -17,7 +17,12 @@ import github
 import joblib
 from github import RateLimitExceededException
 
-from .utils import chunk_iterable, compute_md5, split_pkg
+from .utils import (
+    chunk_iterable,
+    compute_md5,
+    split_pkg,
+    print_github_api_limits,
+)
 from .shards import (
     make_repodata_shard_noretry,
     get_old_shard_path,
@@ -352,6 +357,7 @@ def upload_packages(
                         "\n\nGitHub API rate limit exceeded - exiting\n\n",
                         flush=True,
                     )
+                    print_github_api_limits(gh)
                     break
                 except Exception as e:
                     print("\n\nERROR: %s\n\n" % repr(e), flush=True)
