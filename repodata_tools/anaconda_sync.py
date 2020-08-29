@@ -366,6 +366,7 @@ def upload_packages(
                     all_shards[subdir_pkg] = shard
                     shards_to_write.add(subdir_pkg)
                     print("made %d releases" % len(shards_to_write), flush=True)
+                    print_github_api_limits(gh)
                 finally:
                     time.sleep(random.uniform(10, 20.0))
 
