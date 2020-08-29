@@ -1,6 +1,6 @@
 import hashlib
 import os
-import datetime
+from datetime import datetime
 
 
 def split_pkg(pkg):
