@@ -345,8 +345,6 @@ def upload_packages(
         ])
         for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs), total=len(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)
-            if CONDA_FORGE_SUBIDRS.index(subdir) % n_ranks != rank:
-                continue
 
             if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
                 try:
@@ -380,7 +378,7 @@ def upload_packages(
             _write_shards(
                 shards_to_write,
                 all_shards,
-                f"release {pkg_index+1} of {len(pkgs)} for {subdir}",
+                f"release {pkg_index+1} of {len(pkgs)} for rank {rank}",
             )
             try:
                 _push_repo()
