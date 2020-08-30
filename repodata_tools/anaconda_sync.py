@@ -22,6 +22,7 @@ from .utils import (
     compute_md5,
     split_pkg,
     print_github_api_limits,
+    compute_subdir_pkg_index,
 )
 from .shards import (
     make_repodata_shard_noretry,
@@ -105,11 +106,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 
     shards_to_write = set()
     for label in tqdm.tqdm(labels, desc="labels"):
-
-        for loop_index, subdir in enumerate(CONDA_FORGE_SUBIDRS):
-            if loop_index % n_ranks != rank:
-                continue
-
+        for subdir in CONDA_FORGE_SUBIDRS:
             if label == "main":
                 r = requests.get(
                     "https://conda.anaconda.org/conda-forge/"
@@ -128,9 +125,13 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
 
             os.makedirs(f"shards/{subdir}", exist_ok=True)
 
-            all_pkgs = sorted(list(rd["packages"]))
+            all_pkgs = sorted([
+                pkg
+                for pkg in rd["packages"]
+                if compute_subdir_pkg_index(os.path.join(subdir, pkg)) % n_ranks == rank
+            ])
 
-            total_chunks = len(rd["packages"]) // 64 + 1
+            total_chunks = len(all_pkgs) // 64 + 1
             for chunk_index, pkg_chunk in tqdm.tqdm(
                 enumerate(chunk_iterable(all_pkgs, 64)),
                 desc=f"{label}/{subdir}",
@@ -340,7 +341,7 @@ def upload_packages(
         pkgs = sorted([
             subdir_pkg
             for subdir_pkg in all_shards
-            if CONDA_FORGE_SUBIDRS.index(os.path.split(subdir_pkg)[0]) % n_ranks == rank
+            if compute_subdir_pkg_index(subdir_pkg) % n_ranks == rank
         ])
         for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs), total=len(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)

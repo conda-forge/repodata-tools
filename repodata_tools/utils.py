@@ -3,8 +3,12 @@ import os
 from datetime import datetime
 
 
+def compute_subdir_pkg_index(subdir_pkg):
+    return hashlib.sha1(subdir_pkg.encode()).digest()[0] % 4
+
+
 def split_pkg(pkg):
-    """code due to isuruf and CJ-
+    """code due to isuruf and CJ-Wright
     """
     if not pkg.endswith(".tar.bz2"):
         raise RuntimeError("Can only process packages that end in .tar.bz2")
