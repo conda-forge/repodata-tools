@@ -325,6 +325,7 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
 def upload_packages(
     all_shards, rank, n_ranks, start_time, time_limit, max_write=400
 ):
+    upload_sleep_factor = float(os.environ.get("UPLOAD_SLEEP_FACTOR", "1.0"))
 
     gh = github.Github(os.environ["GITHUB_TOKEN"])
     repo = gh.get_repo("regro/releases")
@@ -366,7 +367,7 @@ def upload_packages(
                     shards_to_write.add(subdir_pkg)
                     print("made %d releases" % len(shards_to_write), flush=True)
                 finally:
-                    time.sleep(random.uniform(15, 20.0))
+                    time.sleep(random.uniform(15, 20.0) * upload_sleep_factor)
 
             if (
                 len(shards_to_write) >= max_write
