@@ -10,3 +10,6 @@ conda-build
 tenacity
 click
 gitpython
+cryptography
+pyjwt
+pynacl

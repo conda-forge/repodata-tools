@@ -9,5 +9,7 @@ setup(
         [console_scripts]
         sync-anaconda-data=repodata_tools.anaconda_sync:main
         make-github-release=repodata_tools.releases:main
+        generate-app-token=repodata_tools.tokens:main_gen
+        push-app-token=repodata_tools.tokens:main_push
     """,
 )
