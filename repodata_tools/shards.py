@@ -100,7 +100,12 @@ def make_repodata_shard_noretry(
     if md5_checksum is not None:
         local_md5 = compute_md5(f"{tmpdir}/{subdir}/{pkg}")
         if not hmac.compare_digest(local_md5, md5_checksum):
-            raise RuntimeError("md5 chechsum is incorrect! exiting!")
+            raise RuntimeError(
+                "md5 chechsum is incorrect: "
+                "download=%s sent=%s exiting!" % (
+                    local_md5, md5_checksum
+                )
+            )
 
     try:
         subprocess.run(
