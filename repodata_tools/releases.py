@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+import sys
 
 import click
 import rapidjson as json
@@ -151,6 +152,13 @@ def main():
     print("subdir/package: %s/%s" % (subdir, pkg), flush=True)
     print("url:", url, flush=True)
     print("add shard:", add_shard, flush=True)
+    
+    shard_pth = get_shard_path(subdir, pkg)
+    shard_pth_exists = shard_exists(shard_pth)
+    print("shard exists:", shard_pth_exists, flush=True)
+    if shard_pth_exists:
+        print("shard already exists! not uploading new package!", flush=True)
+        sys.exit(0)
 
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
@@ -189,6 +197,5 @@ def main():
         )
 
     # push the repodata shard
-    shard_pth = get_shard_path(subdir, pkg)
-    if add_shard and not shard_exists(shard_pth):
+    if add_shard and not shard_pth_exists:
         push_shard(shard, shard_pth, subdir, pkg)
