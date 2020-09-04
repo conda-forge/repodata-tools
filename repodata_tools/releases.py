@@ -156,6 +156,7 @@ def main():
     shard_pth = get_shard_path(subdir, pkg)
     shard_pth_exists = shard_exists(shard_pth)
     print("shard exists:", shard_pth_exists, flush=True)
+    print("shard path:", shard_pth, flush=True)
     if shard_pth_exists:
         print("shard already exists! not uploading new package!", flush=True)
         sys.exit(0)
