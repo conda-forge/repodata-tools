@@ -6,6 +6,8 @@ ADD http://www.randomtext.me/api/gibberish /opt/docker/etc/gibberish
 COPY . /opt/app
 RUN cd /opt/app && \
     conda install -q -y --file requirements.txt && \
+    pip install -e . && \
+    chmod -R 777 /opt/conda && \
     conda clean -tipsy && \
     find /opt/conda -follow -type f -name '*.a' -delete && \
     find /opt/conda -follow -type f -name '*.pyc' -delete && \
