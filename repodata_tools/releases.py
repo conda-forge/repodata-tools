@@ -152,7 +152,7 @@ def main():
     print("subdir/package: %s/%s" % (subdir, pkg), flush=True)
     print("url:", url, flush=True)
     print("add shard:", add_shard, flush=True)
-    
+
     shard_pth = get_shard_path(subdir, pkg)
     shard_pth_exists = shard_exists(shard_pth)
     print("shard exists:", shard_pth_exists, flush=True)
