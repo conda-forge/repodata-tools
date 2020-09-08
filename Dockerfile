@@ -6,8 +6,6 @@ ADD http://www.randomtext.me/api/gibberish /opt/docker/etc/gibberish
 COPY . /opt/app
 RUN cd /opt/app && \
     conda install -q -y --file requirements.txt && \
-    pip install -e . && \
-    chmod -R a+rx /opt/conda && \
     conda clean -tipsy && \
     find /opt/conda -follow -type f -name '*.a' -delete && \
     find /opt/conda -follow -type f -name '*.pyc' -delete && \
@@ -15,4 +13,4 @@ RUN cd /opt/app && \
 
 EXPOSE 5000
 
-CMD ["tini", "--", "/opt/app/run_app.sh"]
+CMD ["tini", "-s", "--", "/opt/app/run_app.sh"]
