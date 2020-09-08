@@ -7,7 +7,11 @@ COPY . /opt/app
 RUN cd /opt/app && \
     conda install -q -y --file requirements.txt && \
     pip install -e . && \
-    conda clean --all
+    chmod -R a+rx /opt/conda && \
+    conda clean -tipsy && \
+    find /opt/conda -follow -type f -name '*.a' -delete && \
+    find /opt/conda -follow -type f -name '*.pyc' -delete && \
+    conda clean -afy
 
 EXPOSE 5000
 
