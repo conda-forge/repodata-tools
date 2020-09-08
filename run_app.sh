@@ -10,11 +10,12 @@ echo " "
 echo "==================================================================================================="
 echo "==================================================================================================="
 
-whoami
+# whoami
 
-ls -lah /opt/conda/lib/python3.7/site-packages/.wh.conda-4.8.2-py3.7.egg-info
-chmod -R 777 /opt/conda
-ls -lah /opt/conda/lib/python3.7/site-packages/.wh.conda-4.8.2-py3.7.egg-info
+chmod 755 /opt/conda/lib/python3.7/site-packages/.wh.conda-4.8.2-py3.7.egg-info
+# ls -lah /opt/conda/lib/python3.7/site-packages/.wh.conda-4.8.2-py3.7.egg-info
+# chmod -R 755 /opt/conda
+# ls -lah /opt/conda/lib/python3.7/site-packages/.wh.conda-4.8.2-py3.7.egg-info
 
 run-repodata-worker &
 
