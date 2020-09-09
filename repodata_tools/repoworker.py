@@ -360,7 +360,7 @@ def _clone_repodata_shards():
 @click.argument("time_limit", type=int)
 @click.option(
     "--make-releases", is_flag=True, help="make github releases with the data")
-def main(time_limit):
+def main(time_limit, make_releases):
     """Worker process for continuously building repodata for a maximum
     number of TIME_LIMIT seconds.
     """
@@ -439,14 +439,15 @@ def main(time_limit):
                                     shell=True,
                                 )
 
-                    if dump_data:
-                        pass
+                    if dump_data and make_releases:
+                        with timer(HEAD, "uploading repodata", indent=1):
+                            pass
 
             current_shas["repodata-shards-sha"] = new_sha
             with open(f"{WORKDIR}/current_shas.json", "w") as fp:
                 json.dump(current_shas, fp)
 
-            if dump_data:
+            if dump_data and make_releases:
                 with timer(HEAD, "writing channel data"):
                     for label in all_channeldata:
                         with open(f"{WORKDIR}/channeldata_{label}.json", "w") as fp:
