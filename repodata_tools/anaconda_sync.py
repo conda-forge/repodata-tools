@@ -417,7 +417,14 @@ def main(rank, n_ranks, time_limit):
     all_shards = {}
     print("reading all shards", flush=True)
     for subdir in CONDA_FORGE_SUBIDRS:
+        old_len = len(all_shards)
         read_subdir_shards(".", subdir, all_shards)
+        print(
+            "found %d repodata shards for subdir %s" % (
+                len(all_shards) - old_len, subdir
+            ),
+            flush=True,
+        )
     print(" ", flush=True)
 
     print("getting labels", flush=True)

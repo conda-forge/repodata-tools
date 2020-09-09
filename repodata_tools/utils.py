@@ -1,6 +1,8 @@
 import hashlib
 import os
+import time
 from datetime import datetime
+from contextlib import contextmanager
 
 
 def compute_subdir_pkg_index(subdir_pkg):
@@ -63,3 +65,13 @@ def print_github_api_limits(gh):
     print("reset time: %s" % reset_time, flush=True)
     print("===================================================", flush=True)
     print("===================================================", flush=True)
+
+
+@contextmanager
+def timer(head, msg, indent=0):
+    _id = " " * (4 * indent)
+    print(head + _id + msg, flush=True)
+    start = time.time()
+    yield None
+    dt = time.time() - start
+    print(head + _id + msg + f" took {dt:0.2f} seconds", flush=True)

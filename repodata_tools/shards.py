@@ -59,19 +59,24 @@ def _read_shard_chunk(shard_pths):
     return shards
 
 
-def read_subdir_shards(shards_repo, subdir, all_shards):
-    shard_paths = glob_shards(shards_repo, subdir)
-    tot = len(shard_paths)
-    print("found %d repodata shards for subdir %s" % (tot, subdir), flush=True)
+def read_subdir_shards(shards_repo, subdir, all_shards, shard_paths=None):
+    if shard_paths is None:
+        _shard_paths = glob_shards(shards_repo, subdir)
+    else:
+        _shard_paths = [
+            s for s in shard_paths
+            if s.startswith(f"{shards_repo}/shards/{subdir}/")
+        ]
+    tot = len(_shard_paths)
 
     n_jobs = 8
     with joblib.Parallel(n_jobs=n_jobs, backend="threading", verbose=0) as p:
         shards_lists = p(
             joblib.delayed(_read_shard_chunk)(s)
-            for s in chunk_iterable(shard_paths, tot // n_jobs)
+            for s in chunk_iterable(_shard_paths, tot // n_jobs)
         )
 
-    assert sum(len(s) for s in shards_lists) == len(shard_paths)
+    assert sum(len(s) for s in shards_lists) == len(_shard_paths)
 
     for shards in shards_lists:
         for shard in shards:
