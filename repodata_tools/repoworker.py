@@ -8,6 +8,7 @@ import bz2
 import requests
 import rapidjson as json
 import click
+import tenacity
 
 from conda_build.conda_interface import VersionOrder
 from conda._vendor.toolz.itertoolz import groupby
@@ -209,13 +210,22 @@ def build_or_update_links_and_repodata_from_packages(
                 repodata[subdir]["main"]["packages"].pop(fn, None)
 
 
-def build_or_update_links_and_repodata_subdir(repodata, links, new_shards, subdir):
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
+    stop=tenacity.stop_after_attempt(10),
+    reraise=True,
+)
+def _get_broken_packages(subdir):
     r = requests.get(
         "https://conda.anaconda.org/conda-forge/label/broken"
         f"/{subdir}/repodata.json.bz2"
     )
     rd_broken = json.load(
         io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+    return rd_broken
+
+
+def build_or_update_links_and_repodata_subdir(repodata, links, new_shards, subdir):
     if new_shards is not None:
         _new_shards = [
             k
@@ -224,6 +234,9 @@ def build_or_update_links_and_repodata_subdir(repodata, links, new_shards, subdi
         ]
     else:
         _new_shards = None
+
+    rd_broken = _get_broken_packages(subdir)
+
     build_or_update_links_and_repodata_from_packages(
         repodata,
         links,
