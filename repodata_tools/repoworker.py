@@ -470,6 +470,15 @@ def main(time_limit, make_releases, debug):
                         shell=True,
                     )
 
+                with timer(HEAD, "uploading links and channel data"):
+                    pass
+
+                with timer(HEAD, "waiting for uploads to finish"):
+                    pass
+
+                with timer(HEAD, "publishing release"):
+                    pass
+
         dt = int(time.time() - build_start_time)
 
         if dt < MIN_UPDATE_TIME:
