@@ -360,7 +360,9 @@ def _clone_repodata_shards():
 @click.argument("time_limit", type=int)
 @click.option(
     "--make-releases", is_flag=True, help="make github releases with the data")
-def main(time_limit, make_releases):
+@click.option(
+    "--debug", is_flag=True, help="write data locally for debugging")
+def main(time_limit, make_releases, debug):
     """Worker process for continuously building repodata for a maximum
     number of TIME_LIMIT seconds.
     """
@@ -480,12 +482,13 @@ def main(time_limit, make_releases):
 
         print(" ", flush=True)
 
-    with timer(HEAD, "dumping all data to JSON and compressing"):
-        with open(f"{WORKDIR}/links.json", "w") as fp:
-            json.dump(all_links, fp, indent=2, sort_keys=True)
-        with open(f"{WORKDIR}/all_repodata.json", "w") as fp:
-            json.dump(all_repodata, fp, indent=2, sort_keys=True)
-        with open(f"{WORKDIR}/all_channeldata.json", "w") as fp:
-            json.dump(all_channeldata, fp, indent=2, sort_keys=True)
-        with open(f"{WORKDIR}/current_shas.json", "w") as fp:
-            json.dump(current_shas, fp)
+    if debug:
+        with timer(HEAD, "dumping all data to JSON"):
+            with open(f"{WORKDIR}/links.json", "w") as fp:
+                json.dump(all_links, fp, indent=2, sort_keys=True)
+            with open(f"{WORKDIR}/all_repodata.json", "w") as fp:
+                json.dump(all_repodata, fp, indent=2, sort_keys=True)
+            with open(f"{WORKDIR}/all_channeldata.json", "w") as fp:
+                json.dump(all_channeldata, fp, indent=2, sort_keys=True)
+            with open(f"{WORKDIR}/current_shas.json", "w") as fp:
+                json.dump(current_shas, fp)
