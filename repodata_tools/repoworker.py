@@ -4,7 +4,10 @@ import subprocess
 import copy
 import io
 import bz2
-
+from datetime import datetime
+import concurrent.futures
+from concurrent.futures import ProcessPoolExecutor
+import github
 import requests
 import rapidjson as json
 import click
@@ -22,6 +25,9 @@ WORKDIR = "repodata_products"
 SHARDS_PATH = "repodata-shards"
 MIN_UPDATE_TIME = 30
 HEAD = "REPO WORKER: "
+
+GH = github.Github(os.environ["GITHUB_TOKEN"])
+REPODATA = GH.get_repo("regro/repodata")
 
 
 def _load_shard_channeldata(subdir, fn, repodata):
@@ -192,6 +198,8 @@ def build_or_update_links_and_repodata_from_packages(
     if new_shards is not None:
         assert len(all_shards) == len(new_shards)
 
+    updated_data = set()
+
     for subdir_pkg, shard in all_shards.items():
         shard["labels"] = override_labels.get(subdir_pkg, shard["labels"])
         for label in shard["labels"]:
@@ -202,12 +210,19 @@ def build_or_update_links_and_repodata_from_packages(
             repodata[subdir][label]["packages"][shard["package"]] \
                 = shard["repodata"]
             links[label][subdir_pkg] = shard["url"]
+            updated_data.add((subdir, label))
 
-    if "main" in repodata[subdir]:
+    if (
+        "main" in repodata[subdir]
+        and sorted(repodata[subdir]["main"]["removed"]) != sorted(removed)
+    ):
+        updated_data.add((subdir, "main"))
         repodata[subdir]["main"]["removed"] = removed
         for fn in removed:
             if fn in repodata[subdir]["main"]["packages"]:
                 repodata[subdir]["main"]["packages"].pop(fn, None)
+
+    return updated_data
 
 
 @tenacity.retry(
@@ -237,7 +252,7 @@ def build_or_update_links_and_repodata_subdir(repodata, links, new_shards, subdi
 
     rd_broken = _get_broken_packages(subdir)
 
-    build_or_update_links_and_repodata_from_packages(
+    return build_or_update_links_and_repodata_from_packages(
         repodata,
         links,
         SHARDS_PATH,
@@ -369,13 +384,42 @@ def _clone_repodata_shards():
     )
 
 
+def _clone_repodata():
+    subprocess.run(
+        "git clone --depth=1 https://github.com/"
+        "regro/repodata.git",
+        shell=True,
+        check=True,
+    )
+
+
+def _get_repodata_sha():
+    repo_sha = subprocess.run(
+        "cd repodata && git rev-parse --verify HEAD",
+        shell=True,
+        capture_output=True,
+    ).stdout.decode("utf-8").strip()
+    return repo_sha
+
+
+@tenacity.retry(
+    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
+    stop=tenacity.stop_after_attempt(10),
+    reraise=True,
+)
+def _upload_asset(rel, pth, content_type):
+    rel.upload_asset(pth, content_type=content_type)
+
+
 @click.command()
 @click.argument("time_limit", type=int)
 @click.option(
     "--make-releases", is_flag=True, help="make github releases with the data")
 @click.option(
+    "--main-only", is_flag=True, help="only release the main channel")
+@click.option(
     "--debug", is_flag=True, help="write data locally for debugging")
-def main(time_limit, make_releases, debug):
+def main(time_limit, make_releases, main_only, debug):
     """Worker process for continuously building repodata for a maximum
     number of TIME_LIMIT seconds.
     """
@@ -386,6 +430,8 @@ def main(time_limit, make_releases, debug):
         _init_git()
         if not os.path.exists(SHARDS_PATH):
             _clone_repodata_shards()
+        if not os.path.exists("repodata"):
+            _clone_repodata()
 
     with timer(HEAD, "loading local data"):
         current_shas, all_repodata, all_channeldata, all_links = load_current_data()
@@ -393,8 +439,7 @@ def main(time_limit, make_releases, debug):
     while time.time() - start_time < time_limit:
         build_start_time = time.time()
 
-        with timer(HEAD, "doing repodata products rebuild"):
-
+        with timer(HEAD, "doing repodata products rebuild"), ProcessPoolExecutor(max_workers=8) as exec:  # noqa
             old_sha, new_sha, new_shards = get_new_shards(current_shas)
             if old_sha is None and new_shards is None:
                 # we are doing a full rebuild
@@ -404,6 +449,20 @@ def main(time_limit, make_releases, debug):
                 dump_data = True
             else:
                 dump_data = False
+
+            futures = []
+            updated_data = set()
+            if dump_data and make_releases:
+                tag = datetime.utcnow().strftime("%Y.%m.%d.%H.%M.%S")
+                rel = REPODATA.create_git_tag_and_release(
+                    tag,
+                    "",
+                    tag,
+                    "",
+                    _get_repodata_sha(),
+                    "commit",
+                    draft=True,
+                )
 
             for subdir in CONDA_FORGE_SUBIDRS:
                 if (
@@ -419,7 +478,7 @@ def main(time_limit, make_releases, debug):
                 with timer(HEAD, "processing subdir %s" % subdir):
                     if rebuild_subdir:
                         with timer(HEAD, "making repodata", indent=1):
-                            build_or_update_links_and_repodata_subdir(
+                            updated_data |= build_or_update_links_and_repodata_subdir(
                                 all_repodata,
                                 all_links,
                                 new_shards,
@@ -438,6 +497,10 @@ def main(time_limit, make_releases, debug):
 
                         with timer(HEAD, "writing data", indent=1):
                             for label in all_repodata[subdir]:
+                                if (subdir, label) not in updated_data:
+                                    continue
+                                if main_only and label != "main":
+                                    continue
                                 with open(
                                     f"{WORKDIR}/repodata_{subdir}_{label}.json", "w"
                                 ) as fp:
@@ -456,7 +519,19 @@ def main(time_limit, make_releases, debug):
 
                     if dump_data and make_releases:
                         with timer(HEAD, "uploading repodata", indent=1):
-                            pass
+                            for label in all_repodata[subdir]:
+                                if (subdir, label) not in updated_data:
+                                    continue
+                                if main_only and label != "main":
+                                    continue
+                                pth = f"{WORKDIR}/repodata_{subdir}_{label}.json"
+                                futures.append(exec.submit(
+                                    _upload_asset, rel, pth, "application/json"
+                                ))
+                                pth = f"{WORKDIR}/repodata_{subdir}_{label}.json.bz2"
+                                futures.append(exec.submit(
+                                    _upload_asset, rel, pth, "application/x-bzip2"
+                                ))
 
             current_shas["repodata-shards-sha"] = new_sha
             with open(f"{WORKDIR}/current_shas.json", "w") as fp:
@@ -465,6 +540,10 @@ def main(time_limit, make_releases, debug):
             if dump_data and make_releases:
                 with timer(HEAD, "writing channel data"):
                     for label in all_channeldata:
+                        if not any(label == t[1] for t in updated_data):
+                            continue
+                        if main_only and label != "main":
+                            continue
                         with open(f"{WORKDIR}/channeldata_{label}.json", "w") as fp:
                             json.dump(
                                 all_channeldata[label],
@@ -484,13 +563,30 @@ def main(time_limit, make_releases, debug):
                     )
 
                 with timer(HEAD, "uploading links and channel data"):
-                    pass
+                    pth = f"{WORKDIR}/links.json"
+                    futures.append(exec.submit(
+                        _upload_asset, rel, pth, "application/json"
+                    ))
+                    pth = f"{WORKDIR}/links.json.bz2"
+                    futures.append(exec.submit(
+                        _upload_asset, rel, pth, "application/x-bzip2"
+                    ))
+
+                    for label in all_channeldata:
+                        if not any(label == t[1] for t in updated_data):
+                            continue
+                        if main_only and label != "main":
+                            continue
+                        pth = f"{WORKDIR}/channeldata_{label}.json"
+                        futures.append(exec.submit(
+                            _upload_asset, rel, pth, "application/json"
+                        ))
 
                 with timer(HEAD, "waiting for uploads to finish"):
-                    pass
+                    concurrent.futures.wait(futures)
 
                 with timer(HEAD, "publishing release"):
-                    pass
+                    rel.update_release(rel.title, rel.body, draft=False)
 
         dt = int(time.time() - build_start_time)
 

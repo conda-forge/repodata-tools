@@ -54,8 +54,9 @@ def glob_shards(shards_repo, subdir, n_dirs=3):
 def _read_shard_chunk(shard_pths):
     shards = []
     for shard_pth in shard_pths:
-        with open(shard_pth, "r") as fp:
-            shards.append(json.load(fp))
+        if os.path.exists(shard_pth):
+            with open(shard_pth, "r") as fp:
+                shards.append(json.load(fp))
     return shards
 
 
