@@ -1,7 +1,8 @@
 import os
-import requests
 import threading
 import gc
+
+from repodata_tools.releases import get_latest_links
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -25,18 +26,14 @@ def setInterval(interval):
     return decorator
 
 
-LINKS = requests.get(
-    "https://github.com/regro/repodata/releases/latest/download/links.json"
-).json()
+LINKS = get_latest_links()
 
 
 @setInterval(300)  # every 5 minutes
 def _update_links():
     print("************* RELOADING LINKS *************")
     global LINKS
-    new_links = requests.get(
-        "https://github.com/regro/repodata/releases/latest/download/links.json"
-    ).json()
+    new_links = get_latest_links()
     LINKS = new_links
     gc.collect()
 

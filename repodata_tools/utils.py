@@ -68,10 +68,11 @@ def print_github_api_limits(gh):
 
 
 @contextmanager
-def timer(head, msg, indent=0):
+def timer(head, msg, indent=0, result=True):
     _id = " " * (4 * indent)
     print(head + _id + msg, flush=True)
     start = time.time()
     yield None
-    dt = time.time() - start
-    print(head + _id + msg + f" took {dt:0.2f} seconds", flush=True)
+    if result:
+        dt = time.time() - start
+        print(head + _id + msg + f" took {dt:0.2f} seconds", flush=True)
