@@ -18,6 +18,14 @@ REPODATA_VERSION = 1
 GH = github.Github(os.environ["GITHUB_TOKEN"])
 REPODATA = GH.get_repo("regro/repodata")
 
+INIT_REPODATA = {
+    'info': {},
+    'packages': {},
+    'packages.conda': {},
+    'removed': [],
+    'repodata_version': REPODATA_VERSION
+}
+
 
 @tenacity.retry(
     wait=tenacity.wait_random_exponential(multiplier=1, max=60),
@@ -254,13 +262,6 @@ def build_or_update_links_and_repodata(
 
     override_labels = override_labels or {}
     removed = removed or []
-    init_repodata = {
-        'info': {'subdir': subdir},
-        'packages': {},
-        'packages.conda': {},
-        'removed': [],
-        'repodata_version': REPODATA_VERSION
-    }
 
     updated_data = set()
 
@@ -271,10 +272,13 @@ def build_or_update_links_and_repodata(
                 if fetch_repodata is not None:
                     repodata[subdir][label] = (
                         fetch_repodata(links, subdir, label)
-                        or copy.deepcopy(init_repodata)
+                        or copy.deepcopy(INIT_REPODATA)
                     )
                 else:
-                    repodata[subdir][label] = copy.deepcopy(init_repodata)
+                    repodata[subdir][label] = copy.deepcopy(INIT_REPODATA)
+
+                repodata[subdir][label]["info"]["subdir"] = subdir
+
             repodata[subdir][label]["packages"][shard["package"]] \
                 = shard["repodata"]
             links["packages"][subdir_pkg] = shard["url"]

@@ -3,6 +3,7 @@ import os
 import io
 import bz2
 import subprocess
+import copy
 from datetime import datetime
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
@@ -25,6 +26,7 @@ from .index import (
     build_or_update_channeldata,
     build_or_update_links_and_repodata,
     REPODATA,
+    INIT_REPODATA,
 )
 
 WORKDIR = "repodata_products"
@@ -47,6 +49,8 @@ def _fetch_repodata(links, subdir, label):
         r = requests.get(url)
         return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
     else:
+        rd = copy.deepcopy(INIT_REPODATA)
+        rd["info"]["subdir"] = subdir
         return None
 
 
