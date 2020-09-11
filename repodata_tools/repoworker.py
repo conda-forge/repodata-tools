@@ -211,8 +211,7 @@ def _init_git():
 
 def _clone_repodata_shards():
     subprocess.run(
-        "git clone --depth=1 https://github.com/"
-        "regro/repodata-shards.git",
+        "git clone https://github.com/regro/repodata-shards.git",
         shell=True,
         check=True,
     )
@@ -220,8 +219,7 @@ def _clone_repodata_shards():
 
 def _clone_repodata():
     subprocess.run(
-        "git clone --depth=1 https://github.com/"
-        "regro/repodata.git",
+        "git clone https://github.com/regro/repodata.git",
         shell=True,
         check=True,
     )
