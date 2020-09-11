@@ -435,7 +435,9 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                     rel.update_release(rel.title, rel.body, draft=False)
 
                 with timer(HEAD, "deleting old releases"):
-                    delete_old_repodata_releases(all_links)
+                    tags = delete_old_repodata_releases(all_links)
+                    for tag in tags:
+                        print(f"{HEAD}deleted release {tag}", flush=True)
 
         dt = int(time.time() - build_start_time)
 
