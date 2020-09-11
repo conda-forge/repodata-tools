@@ -434,6 +434,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 with timer(HEAD, "publishing release", result=False):
                     rel.update_release(rel.title, rel.body, draft=False)
 
+            if make_releases:
                 with timer(HEAD, "deleting old releases"):
                     tags = delete_old_repodata_releases(all_links)
                     for tag in tags:
