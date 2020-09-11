@@ -276,7 +276,12 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             old_sha, new_sha, new_shards = _get_new_shards(all_links["current-shas"])
 
             updated_data = set()
-            if make_releases:
+            if (
+                make_releases
+                and
+                # None is a full rebuild, otherwise it means we have new ones to add
+                (new_shards is None or len(new_shards) > 0)
+            ):
                 tag = datetime.utcnow().strftime("%Y.%m.%d.%H.%M.%S")
                 rel = REPODATA.create_git_tag_and_release(
                     tag,
