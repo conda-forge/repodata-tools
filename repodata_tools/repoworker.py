@@ -27,6 +27,7 @@ from .index import (
     build_or_update_links_and_repodata,
     REPODATA,
     INIT_REPODATA,
+    build_current_repodata,
 )
 
 WORKDIR = "repodata_products"
@@ -195,17 +196,17 @@ def _load_current_data(make_releases, allow_unsafe):
 
 def _init_git():
     # configure git
-    subprocess.run(
-        "git config --global user.email "
-        "'64793534+conda-forge-daemon@users.noreply.github.com'",
-        shell=True,
-        check=True,
-    )
-    subprocess.run(
-        "git config --global user.name 'conda-forge-daemon'",
-        shell=True,
-        check=True,
-    )
+    # subprocess.run(
+    #     "git config --global user.email "
+    #     "'64793534+conda-forge-daemon@users.noreply.github.com'",
+    #     shell=True,
+    #     check=True,
+    # )
+    # subprocess.run(
+    #     "git config --global user.name 'conda-forge-daemon'",
+    #     shell=True,
+    #     check=True,
+    # )
     subprocess.run(
         "git config --global pull.rebase false",
         shell=True,
@@ -316,6 +317,52 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                             )
 
                         if make_releases:
+                            with timer(HEAD, "building current repodata", indent=1):
+                                for label in all_repodata[subdir]:
+                                    if (subdir, label) not in updated_data:
+                                        continue
+                                    if main_only and label != "main":
+                                        continue
+
+                                    crd = build_current_repodata(
+                                        subdir,
+                                        all_repodata[subdir][label],
+                                        )
+
+                                    pth = (
+                                        f"{WORKDIR}/current_repodata_"
+                                        f"{subdir}_{label}.json"
+                                    )
+                                    with open(pth, "w") as fp:
+                                        json.dump(
+                                            crd,
+                                            fp,
+                                            indent=2,
+                                            sort_keys=True,
+                                        )
+                                    subprocess.run(
+                                        f"cd {WORKDIR} && "
+                                        f"rm -f current_repodata_"
+                                        f"{subdir}_{label}.json.bz2 && "
+                                        f"bzip2 --keep current_repodata_"
+                                        f"{subdir}_{label}.json",
+                                        shell=True,
+                                    )
+
+                                    futures.append(exec.submit(
+                                        upload_repodata_asset,
+                                        rel,
+                                        pth,
+                                        "application/json",
+                                    ))
+                                    pth += ".bz2"
+                                    futures.append(exec.submit(
+                                        upload_repodata_asset,
+                                        rel,
+                                        pth,
+                                        "application/x-bzip2",
+                                    ))
+
                             with timer(HEAD, "writing repodata data", indent=1):
                                 for label in all_repodata[subdir]:
                                     if (subdir, label) not in updated_data:

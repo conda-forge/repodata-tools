@@ -9,6 +9,7 @@ import rapidjson as json
 import requests
 from conda_build.conda_interface import VersionOrder
 from conda._vendor.toolz.itertoolz import groupby
+from conda_build.index import _build_current_repodata
 
 from .shards import get_shard_path
 
@@ -295,3 +296,11 @@ def build_or_update_links_and_repodata(
                 repodata[subdir]["main"]["packages"].pop(fn, None)
 
     return updated_data
+
+
+def build_current_repodata(subdir, repodata):
+    pins = {
+        "python": ["3.6.*", "3.7.*", "3.8.*"],
+        "r-base": ["3.6", "4.0"],
+    }
+    return _build_current_repodata(subdir, repodata, pins)

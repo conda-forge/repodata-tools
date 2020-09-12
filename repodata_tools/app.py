@@ -62,10 +62,14 @@ async def root_label(label):
 
 @app.get("/conda-forge-sparta/label/{label}/channeldata.json")
 async def channeldata_label(label):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"channeldata_{label}.json"
-    )
+    fn = f"channeldata_{label}.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/channeldata.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/")
@@ -78,56 +82,80 @@ async def subdir_root_label(label, subdir):
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata.json")
 async def subdir_repodatadata_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json"
-    )
+    fn = f"repodata_{subdir}_{label}.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/repodata.json",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata.json.bz2")
 async def subdir_repodatadatabz2_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json.bz2"
-    )
+    fn = f"repodata_{subdir}_{label}.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/repodata.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata_from_packages.json")
 async def subdir_repodatadata_pkgs_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json"
-    )
+    fn = f"repodata_from_packages_{subdir}_{label}.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/repodata_from_packages.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata_from_packages.json.bz2")
 async def subdir_repodatadatabz2_pkgs_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json.bz2"
-    )
+    fn = f"repodata_from_packages_{subdir}_{label}.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/repodata_from_packages.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/current_repodata.json")
 async def subdir_repodatadata_curr_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json"
-    )
+    fn = f"current_repodata_{subdir}_{label}.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/current_repodata.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/current_repodata.json.bz2")
 async def subdir_repodatadatabz2_curr_label(label, subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_{label}.json.bz2"
-    )
+    fn = f"current_repodata_{subdir}_{label}.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"label/{label}/{subdir}/current_repodata.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/{pkg}")
 async def subdir_pkg_label(label, subdir, pkg):
     subdir_pkg = os.path.join(subdir, pkg)
-    url = LINKS[label].get(subdir_pkg, None)
+    url = LINKS["packages"].get(subdir_pkg, None)
     if url is None:
         raise HTTPException(
             status_code=404, detail=f"label/{label}/{subdir_pkg} not found!"
@@ -148,10 +176,14 @@ async def root_main():
 
 @app.get("/conda-forge-sparta/channeldata.json")
 async def channeldata():
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        "channeldata_main.json"
-    )
+    fn = "channeldata_main.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail="channel_data.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/")
@@ -164,56 +196,82 @@ async def subdir_root(subdir):
 
 @app.get("/conda-forge-sparta/{subdir}/repodata.json")
 async def subdir_repodatadata(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json"
-    )
+    fn = f"repodata_{subdir}_main.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/repodata.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/repodata.json.bz2")
 async def subdir_repodatadatabz2(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json.bz2"
-    )
+    fn = f"repodata_{subdir}_main.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/repodata.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/repodata_from_packages.json")
 async def subdir_repodatadata_pkgs(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json"
-    )
+    fn = f"repodata_from_packages_{subdir}_main.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/repodata_from_packages_{subdir}_main.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/repodata_from_packages.json.bz2")
 async def subdir_repodatadatabz2_pkgs(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json.bz2"
-    )
+    fn = f"repodata_from_packages_{subdir}_main.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/repodata_from_packages_{subdir}_main.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/current_repodata.json")
 async def subdir_repodatadata_curr(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json"
-    )
+    fn = f"current_repodata_{subdir}_main.json"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/current_repodata_{subdir}_main.json not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/current_repodata.json.bz2")
 async def subdir_repodatadatabz2_curr(subdir):
-    return RedirectResponse(
-        "https://github.com/regro/repodata/releases/latest/download/"
-        f"repodata_{subdir}_main.json.bz2"
-    )
+    fn = f"current_repodata_{subdir}_main.json.bz2"
+    url = LINKS["serverdata"].get(fn, [None])[-1]
+    if url is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{subdir}/current_repodata_{subdir}_main.json.bz2 not found!",
+        )
+    return RedirectResponse(url)
 
 
 @app.get("/conda-forge-sparta/{subdir}/{pkg}")
 async def subdir_pkg(subdir, pkg):
     subdir_pkg = os.path.join(subdir, pkg)
-    url = LINKS["main"].get(subdir_pkg, None)
+    url = LINKS["packages"].get(subdir_pkg, None)
     if url is None:
-        raise HTTPException(status_code=404, detail=f"{subdir_pkg} not found!")
+        raise HTTPException(
+            status_code=404, detail=f"{subdir_pkg} not found!"
+        )
     return RedirectResponse(url)
