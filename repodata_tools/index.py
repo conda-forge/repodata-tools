@@ -299,8 +299,4 @@ def build_or_update_links_and_repodata(
 
 
 def build_current_repodata(subdir, repodata):
-    pins = {
-        "python": ["3.6.*", "3.7.*", "3.8.*"],
-        "r-base": ["3.6", "4.0"],
-    }
-    return _build_current_repodata(subdir, repodata, pins)
+    return _build_current_repodata(subdir, repodata, None)
