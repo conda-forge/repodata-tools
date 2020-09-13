@@ -118,24 +118,6 @@ def main():
     This command is meant to be run inside of GitHub actions, triggered on
     repo dispatch events.
     """
-    # configure git
-    subprocess.run(
-        "git config --global user.email "
-        "'64793534+conda-forge-daemon@users.noreply.github.com'",
-        shell=True,
-        check=True,
-    )
-    subprocess.run(
-        "git config --global user.name 'conda-forge-daemon'",
-        shell=True,
-        check=True,
-    )
-    subprocess.run(
-        "git config --global pull.rebase false",
-        shell=True,
-        check=True,
-    )
-
     # pull event data
     with open(os.environ["GITHUB_EVENT_PATH"], 'r') as fp:
         event_data = json.load(fp)
