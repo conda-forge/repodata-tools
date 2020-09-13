@@ -354,26 +354,6 @@ def _load_current_data(make_releases, allow_unsafe):
         return {}, all_links
 
 
-def _init_git():
-    # configure git
-    # subprocess.run(
-    #     "git config --global user.email "
-    #     "'64793534+conda-forge-daemon@users.noreply.github.com'",
-    #     shell=True,
-    #     check=True,
-    # )
-    # subprocess.run(
-    #     "git config --global user.name 'conda-forge-daemon'",
-    #     shell=True,
-    #     check=True,
-    # )
-    subprocess.run(
-        "git config --global pull.rebase false",
-        shell=True,
-        check=True,
-    )
-
-
 def _clone_repodata_shards():
     subprocess.run(
         "git clone https://github.com/regro/repodata-shards.git",
@@ -428,9 +408,8 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
 
     start_time = time.time()
 
-    with timer(HEAD, "initializing git and pulling repodata shards"):
+    with timer(HEAD, "pulling repos"):
         os.makedirs(WORKDIR, exist_ok=True)
-        _init_git()
         if not os.path.exists("repodata-shards"):
             _clone_repodata_shards()
         if not os.path.exists("repodata"):
@@ -474,6 +453,9 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                     draft=True,
                 )
                 futures = []
+            else:
+                # do this to catch errors
+                futures = None
 
             for subdir in CONDA_FORGE_SUBIDRS:
                 if new_shards is not None:
@@ -603,18 +585,19 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             all_links["current-shas"]["repodata-shards-sha"] = new_sha
             all_links["current-shas"]["repodata-patches-sha"] = new_patch_sha
 
-            with timer(HEAD, "(re)building channel data"):
-                futures.extend(_build_channel_data(
-                    all_channeldata,
-                    all_links,
-                    all_patched_repodata,
-                    all_links["labels"],
-                    updated_data,
-                    rel,
-                    exec,
-                    make_releases=make_releases,
-                    main_only=main_only,
-                ))
+            if updated_data:
+                with timer(HEAD, "(re)building channel data"):
+                    futures.extend(_build_channel_data(
+                        all_channeldata,
+                        all_links,
+                        all_patched_repodata,
+                        all_links["labels"],
+                        updated_data,
+                        rel,
+                        exec,
+                        make_releases=make_releases,
+                        main_only=main_only,
+                    ))
 
             if updated_data and make_releases:
                 with timer(HEAD, "waiting for repo/channel data uploads to finish"):
