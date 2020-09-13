@@ -1,44 +1,14 @@
 import os
-import threading
 import gc
+import hmac
+import hashlib
 
-from repodata_tools.releases import get_latest_links
+from repodata_tools.index import get_latest_links
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-
-# https://stackoverflow.com/questions/12435211/python-threading-timer-repeat-function-every-n-seconds
-def setInterval(interval):
-    def decorator(function):
-        def wrapper(*args, **kwargs):
-            stopped = threading.Event()
-
-            def loop():  # executed in another thread
-                while not stopped.wait(interval):  # until stopped
-                    function(*args, **kwargs)
-
-            t = threading.Thread(target=loop)
-            t.daemon = True  # stop if the program exits
-            t.start()
-            return stopped
-        return wrapper
-    return decorator
-
-
 LINKS = get_latest_links()
-
-
-@setInterval(300)  # every 5 minutes
-def _update_links():
-    print("************* RELOADING LINKS *************")
-    global LINKS
-    new_links = get_latest_links()
-    LINKS = new_links
-    gc.collect()
-
-
-_stop_update_links = _update_links()
 
 app = FastAPI()
 
@@ -46,6 +16,33 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "this is the index!"}
+
+
+@app.post("/update-links")
+async def update_links(request: Request, status_code=204):
+    body = await request.body()
+    signature = request.headers.get('X-Hub-Signature', '')
+    our_hash = hmac.new(
+        os.environ['CF_SPARTA_TOKEN'].encode('utf-8'),
+        body,
+        hashlib.sha1,
+    ).hexdigest()
+    their_hash = signature.split("=")[1]
+
+    if not hmac.compare_digest(their_hash, our_hash):
+        raise HTTPException(
+            status_code=403,
+            detail="invalid request",
+        )
+    else:
+        event = request.headers.get('X-GitHub-Event', None)
+        if event == "ping":
+            return "pong"
+        else:
+            global LINKS
+            new_links = get_latest_links()
+            LINKS = new_links
+            gc.collect()
 
 
 ################################################################################
