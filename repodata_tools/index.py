@@ -255,14 +255,12 @@ def build_or_update_links_and_repodata(
     subdir,
     shards,
     override_labels=None,
-    removed=None,
     fetch_repodata=None,
 ):
     if subdir not in repodata:
         repodata[subdir] = {}
 
     override_labels = override_labels or {}
-    removed = removed or []
 
     updated_data = set()
 
@@ -284,16 +282,6 @@ def build_or_update_links_and_repodata(
                 = shard["repodata"]
             links["packages"][subdir_pkg] = shard["url"]
             updated_data.add((subdir, label))
-
-    if (
-        "main" in repodata[subdir]
-        and sorted(repodata[subdir]["main"]["removed"]) != sorted(removed)
-    ):
-        updated_data.add((subdir, "main"))
-        repodata[subdir]["main"]["removed"] = removed
-        for fn in removed:
-            if fn in repodata[subdir]["main"]["packages"]:
-                repodata[subdir]["main"]["packages"].pop(fn, None)
 
     return updated_data
 
