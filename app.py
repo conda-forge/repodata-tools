@@ -35,10 +35,11 @@ async def update_links(request: Request, status_code=204):
             detail="invalid request",
         )
     else:
+        blob = await request.json()
         event = request.headers.get('X-GitHub-Event', None)
         if event == "ping":
             return "pong"
-        elif body["action"] == "published":
+        elif blob["action"] == "published":
             print("**************** UPDATING LINKS ****************", flush=True)
             global LINKS
             new_links = get_latest_links()
