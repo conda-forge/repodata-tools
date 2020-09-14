@@ -38,11 +38,13 @@ async def update_links(request: Request, status_code=204):
         event = request.headers.get('X-GitHub-Event', None)
         if event == "ping":
             return "pong"
-        else:
+        elif body["action"] == "published":
+            print("**************** UPDATING LINKS ****************", flush=True)
             global LINKS
             new_links = get_latest_links()
             LINKS = new_links
             gc.collect()
+            print("**************** DONE UPDATING LINKS ****************", flush=True)
 
 
 ################################################################################
