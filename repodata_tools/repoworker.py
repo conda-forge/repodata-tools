@@ -18,7 +18,7 @@ import click
 
 from .shards import read_subdir_shards
 from .metadata import CONDA_FORGE_SUBIDRS
-from .utils import timer
+from .utils import timer, print_github_api_limits
 
 from .links import get_latest_links
 from .index import (
@@ -29,6 +29,7 @@ from .index import (
     REPODATA,
     INIT_REPODATA,
     build_current_repodata,
+    GH,
 )
 
 WORKDIR = "repodata_products"
@@ -476,12 +477,13 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 with timer(HEAD, "processing shards for subdir %s" % subdir):
                     if new_subdir_shards is None or len(new_subdir_shards) > 0:
                         with timer(HEAD, "making repodata", indent=1):
-                            updated_data |= _update_repodata_from_shards(
+                            subdir_updated_data = _update_repodata_from_shards(
                                 all_repodata,
                                 all_links,
                                 new_subdir_shards,
                                 subdir,
                             )
+                            updated_data |= subdir_updated_data
                             all_labels = set(all_links["labels"])
                             all_labels |= set(
                                 [label for label in all_patched_repodata[subdir]])
@@ -489,7 +491,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                                 [label for label in all_repodata[subdir]])
                             all_links["labels"] = sorted(all_labels)
 
-                    if make_releases:
+                    if make_releases and (subdir_updated_data or repatch_all_pkgs):
                         with timer(HEAD, "patching and writing repodata", indent=1):
                             for label in all_links["labels"]:
                                 if (
@@ -641,6 +643,10 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 flush=True,
             )
             time.sleep(MIN_UPDATE_TIME - dt)
+
+        print(" ", flush=True)
+
+        print_github_api_limits(GH)
 
         print(" ", flush=True)
 
