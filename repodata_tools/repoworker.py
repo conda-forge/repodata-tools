@@ -474,6 +474,8 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 if subdir not in all_patched_repodata:
                     all_patched_repodata[subdir] = {}
 
+                subdir_updated_data = set()
+
                 with timer(HEAD, "processing shards for subdir %s" % subdir):
                     if new_subdir_shards is None or len(new_subdir_shards) > 0:
                         with timer(HEAD, "making repodata", indent=1):
