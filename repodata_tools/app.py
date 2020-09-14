@@ -3,10 +3,10 @@ import gc
 import hmac
 import hashlib
 
-from repodata_tools.index import get_latest_links
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
+
+from repodata_tools.links import get_latest_links
 
 LINKS = get_latest_links()
 

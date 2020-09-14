@@ -20,8 +20,8 @@ from .shards import read_subdir_shards
 from .metadata import CONDA_FORGE_SUBIDRS
 from .utils import timer
 
+from .links import get_latest_links
 from .index import (
-    get_latest_links,
     upload_repodata_asset,
     delete_old_repodata_releases,
     build_or_update_channeldata,
