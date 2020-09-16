@@ -159,7 +159,12 @@ def main():
             md5_checksum=md5_val,
         )
 
-        rel, curr_asts = get_or_make_release(repo, subdir, pkg)
+        rel, curr_asts = get_or_make_release(
+            repo,
+            subdir,
+            pkg,
+            make_commit=False,
+        )
 
         ast = upload_asset(
             rel,
