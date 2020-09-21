@@ -152,8 +152,9 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
 
         patched_repodata["packages"] = new_index
 
-    to_remove = set(removed) - set(patched_repodata["removed"])
-    for fn in to_remove:
+    # FIXME: this appears to be buggy
+    # to_remove = set(removed) - set(patched_repodata["removed"])
+    for fn in removed:
         if fn in patched_repodata["packages"]:
             del patched_repodata["packages"][fn]
 
