@@ -151,8 +151,11 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
         _clean_nones(new_index)
 
         patched_repodata["packages"] = new_index
+        patched_repodata["removed"] = []
 
-    # FIXME: this appears to be buggy
+    # FIXME: this appears to be buggy - I think the line resetting removed above fixes
+    # this, but I want to wait a while for the old buggy versions to be removed 
+    # from the releases before trying again - MRB 2020/09/21
     # to_remove = set(removed) - set(patched_repodata["removed"])
     for fn in removed:
         if fn in patched_repodata["packages"]:
