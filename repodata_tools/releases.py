@@ -17,8 +17,8 @@ from .shards import (
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def get_or_make_release(repo, subdir, pkg, repo_pth=None, make_commit=True):
@@ -48,8 +48,8 @@ def get_or_make_release(repo, subdir, pkg, repo_pth=None, make_commit=True):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def upload_asset(rel, curr_asts, pth, content_type):
@@ -70,8 +70,8 @@ def upload_asset(rel, curr_asts, pth, content_type):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def make_or_get_commit(subdir, pkg, make_commit=False, repo_pth=None):

@@ -64,8 +64,8 @@ def _write_compress_and_start_upload(
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def _fetch_repodata(links, subdir, label):
@@ -83,8 +83,8 @@ def _fetch_repodata(links, subdir, label):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def _fetch_patched_repodata(links, subdir, label):
@@ -154,7 +154,7 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
         patched_repodata["removed"] = []
 
     # FIXME: this appears to be buggy - I think the line resetting removed above fixes
-    # this, but I want to wait a while for the old buggy versions to be removed 
+    # this, but I want to wait a while for the old buggy versions to be removed
     # from the releases before trying again - MRB 2020/09/21
     # to_remove = set(removed) - set(patched_repodata["removed"])
     for fn in removed:
@@ -295,8 +295,8 @@ def _update_and_reimport_patch_fns(old_sha):
     from gen_patch_json import _add_removals, _gen_new_index
 
     @tenacity.retry(
-        wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+        stop=tenacity.stop_after_attempt(5),
         reraise=True,
     )
     def gen_removals(subdir):
@@ -428,6 +428,18 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         all_patched_repodata = {}
 
     while time.time() - start_time < time_limit:
+        __dt = time.time() - start_time
+        print("===================================================", flush=True)
+        print("===================================================", flush=True)
+        print(
+            "used %ds of %ds total - %ds remaining" % (
+                __dt, time_limit, time_limit - __dt
+            ),
+            flush=True,
+        )
+        print("===================================================", flush=True)
+        print("===================================================", flush=True)
+
         build_start_time = time.time()
 
         with timer(HEAD, "doing repodata products rebuild"), ThreadPoolExecutor(max_workers=8) as exec:  # noqa
@@ -444,7 +456,8 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             if (
                 make_releases
                 and
-                # None is a full rebuild, otherwise len > 0 means we have new ones to add
+                # None is a full rebuild, otherwise len > 0 means we have new ones
+                # to add
                 # we have to make a release if we need to repatch everything as well
                 (new_shards is None or len(new_shards) > 0 or repatch_all_pkgs)
             ):

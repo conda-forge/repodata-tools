@@ -7,8 +7,8 @@ import requests
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def get_latest_links():

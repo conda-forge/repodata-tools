@@ -159,8 +159,8 @@ def make_repodata_shard_noretry(
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum=None):
@@ -169,8 +169,8 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_checksum
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def shard_exists(shard_pth):
@@ -188,8 +188,8 @@ def shard_exists(shard_pth):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def push_shard(shard, shard_pth, subdir, pkg):
