@@ -29,8 +29,8 @@ INIT_REPODATA = {
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def get_broken_packages(subdir):
@@ -44,8 +44,8 @@ def get_broken_packages(subdir):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def upload_repodata_asset(rel, pth, content_type):
@@ -59,8 +59,8 @@ def upload_repodata_asset(rel, pth, content_type):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def _delete_repodata_release(rel):
@@ -76,8 +76,8 @@ def _delete_repodata_release(rel):
 
 
 @tenacity.retry(
-    wait=tenacity.wait_random_exponential(multiplier=1, max=60),
-    stop=tenacity.stop_after_attempt(10),
+    wait=tenacity.wait_random_exponential(multiplier=1, max=10),
+    stop=tenacity.stop_after_attempt(5),
     reraise=True,
 )
 def delete_old_repodata_releases(all_links):
