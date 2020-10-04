@@ -444,8 +444,9 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             if (
                 make_releases
                 and
-                # None is a full rebuild, otherwise it means we have new ones to add
-                (new_shards is None or len(new_shards) > 0)
+                # None is a full rebuild, otherwise len > 0 means we have new ones to add
+                # we have to make a release if we need to repatch everything as well
+                (new_shards is None or len(new_shards) > 0 or repatch_all_pkgs)
             ):
                 tag = datetime.utcnow().strftime("%Y.%m.%d.%H.%M.%S")
                 rel = REPODATA.create_git_tag_and_release(
