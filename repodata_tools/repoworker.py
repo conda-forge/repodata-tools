@@ -428,6 +428,18 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         all_patched_repodata = {}
 
     while time.time() - start_time < time_limit:
+        __dt = time.time() - start_time
+        print("===================================================", flush=True)
+        print("===================================================", flush=True)
+        print(
+            "used %ds of %ds total - %ds remaining" % (
+                __dt, time_limit, time_limit - __dt
+            ), 
+            flush=True,
+        )
+        print("===================================================", flush=True)
+        print("===================================================", flush=True)
+
         build_start_time = time.time()
 
         with timer(HEAD, "doing repodata products rebuild"), ThreadPoolExecutor(max_workers=8) as exec:  # noqa
