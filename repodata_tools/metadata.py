@@ -18,3 +18,7 @@ UNINDEXABLE = [
     "osx-64/pyside2-2.0.0~alpha0-py35_0.tar.bz2",
     "osx-64/pyside2-2.0.0~alpha0-py36_0.tar.bz2",
 ]
+
+UNDISTRIBUTABLE = [
+    "cudatoolkit",
+]

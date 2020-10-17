@@ -34,7 +34,7 @@ from .releases import (
     get_or_make_release,
     upload_asset
 )
-from .metadata import CONDA_FORGE_SUBIDRS
+from .metadata import CONDA_FORGE_SUBIDRS, UNDISTRIBUTABLE
 
 
 def _build_shard(subdir, pkg, label):
@@ -303,14 +303,15 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
             make_commit=False,
         )
 
-        ast = upload_asset(
-            rel,
-            curr_asts,
-            f"{tmpdir}/{subdir}/{pkg}",
-            content_type="application/x-bzip2",
-        )
+        if split_pkg(os.path.join(subdir, pkg))[1] not in UNDISTRIBUTABLE:
+            ast = upload_asset(
+                rel,
+                curr_asts,
+                f"{tmpdir}/{subdir}/{pkg}",
+                content_type="application/x-bzip2",
+            )
+            shard["url"] = ast.browser_download_url
 
-        shard["url"] = ast.browser_download_url
         with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
             json.dump(shard, fp, sort_keys=True, indent=2)
 
