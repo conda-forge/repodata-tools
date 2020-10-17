@@ -14,6 +14,8 @@ from .shards import (
     shard_exists,
     push_shard,
 )
+from .metadata import UNDISTRIBUTABLE
+from .utils import split_pkg
 
 
 @tenacity.retry(
@@ -143,6 +145,11 @@ def main():
         print("shard already exists! not uploading new package!", flush=True)
         sys.exit(0)
 
+    if split_pkg(os.path.join(subdir, pkg))[1] in UNDISTRIBUTABLE:
+        upload_pkg = False
+    else:
+        upload_pkg = True
+
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
     repo = gh.get_repo("regro/releases")
@@ -166,14 +173,15 @@ def main():
             make_commit=False,
         )
 
-        ast = upload_asset(
-            rel,
-            curr_asts,
-            f"{tmpdir}/{subdir}/{pkg}",
-            content_type="application/x-bzip2",
-        )
+        if upload_pkg:
+            ast = upload_asset(
+                rel,
+                curr_asts,
+                f"{tmpdir}/{subdir}/{pkg}",
+                content_type="application/x-bzip2",
+            )
+            shard["url"] = ast.browser_download_url
 
-        shard["url"] = ast.browser_download_url
         with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
             json.dump(shard, fp, sort_keys=True, indent=2)
 
