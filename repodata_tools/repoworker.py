@@ -74,12 +74,16 @@ def _fetch_repodata(links, subdir, label):
         url = links["serverdata"][fn][-1]
         if not url.endswith(".bz2"):
             url += ".bz2"
+        print(
+            f"{HEAD}    fetching {url}",
+            flush=True,
+        )
         r = requests.get(url)
         return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
-        return None
+        return rd
 
 
 @tenacity.retry(
@@ -93,12 +97,16 @@ def _fetch_patched_repodata(links, subdir, label):
         url = links["serverdata"][fn][-1]
         if not url.endswith(".bz2"):
             url += ".bz2"
+        print(
+            f"{HEAD}    fetching {url}",
+            flush=True,
+        )
         r = requests.get(url)
         return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
-        return None
+        return rd
 
 
 def _update_repodata_from_shards(repodata, links, new_shards, subdir):
