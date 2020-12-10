@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
-    repo = gh.get_repo("regro/releases")
+    repo = gh.get_repo("conda-forge/releases")
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:

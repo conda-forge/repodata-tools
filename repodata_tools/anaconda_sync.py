@@ -329,13 +329,13 @@ def upload_packages(
     upload_sleep_factor = float(os.environ.get("UPLOAD_SLEEP_FACTOR", "1.0"))
 
     gh = github.Github(os.environ["GITHUB_TOKEN"])
-    repo = gh.get_repo("regro/releases")
+    repo = gh.get_repo("conda-forge/releases")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        Repo.clone_from("https://github.com/regro/releases.git", tmpdir)
+        Repo.clone_from("https://github.com/conda-forge/releases.git", tmpdir)
         subprocess.run(
             f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${GITHUB_TOKEN}@github.com/regro/releases.git",
+            "https://${GITHUB_TOKEN}@github.com/conda-forge/releases.git",
             shell=True,
             check=True,
         )
