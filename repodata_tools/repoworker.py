@@ -377,7 +377,7 @@ def _clone_repodata_shards():
 
 def _clone_repodata():
     subprocess.run(
-        "git clone https://github.com/regro/repodata.git",
+        "git clone https://github.com/conda-forge/repodata.git",
         shell=True,
         check=True,
     )

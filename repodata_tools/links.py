@@ -14,6 +14,6 @@ import requests
 def get_latest_links():
     return json.load(io.StringIO(bz2.decompress(
         requests.get(
-            "https://github.com/regro/repodata/releases/latest/download/links.json.bz2"
+            "https://github.com/conda-forge/repodata/releases/latest/download/links.json.bz2"
         ).content
     ).decode("utf-8")))

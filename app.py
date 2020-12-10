@@ -55,9 +55,6 @@ async def update_links(request: Request, status_code=204):
 @app.get("/conda-forge-sparta/label/{label}")
 async def root_label(label):
     return {"message": "this is the index!"}
-    # return RedirectResponse(
-    #     f"https://regro.github.io/repodata/label/{label}/index.html"
-    # )
 
 
 @app.get("/conda-forge-sparta/label/{label}/channeldata.json")
@@ -75,9 +72,6 @@ async def channeldata_label(label):
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/")
 async def subdir_root_label(label, subdir):
     return {"message": "this is the index!"}
-    # return RedirectResponse(
-    #     f"https://regro.github.io/repodata/label/{label}/{subdir}/index.html"
-    # )
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata.json")
@@ -171,7 +165,6 @@ async def subdir_pkg_label(label, subdir, pkg):
 @app.get("/conda-forge-sparta/")
 async def root_main():
     return {"message": "this is the index!"}
-    # return RedirectResponse("https://regro.github.io/repodata/label/main/index.html")
 
 
 @app.get("/conda-forge-sparta/channeldata.json")
@@ -189,9 +182,6 @@ async def channeldata():
 @app.get("/conda-forge-sparta/{subdir}/")
 async def subdir_root(subdir):
     return {"message": "this is the index!"}
-    # return RedirectResponse(
-    #     f"https://regro.github.io/repodata/label/main/{subdir}/index.html"
-    # )
 
 
 @app.get("/conda-forge-sparta/{subdir}/repodata.json")
