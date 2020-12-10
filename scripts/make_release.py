@@ -92,7 +92,7 @@ def make_repodata_shard(subdir, pkg, label, feedstock, url, tmpdir, md5_val):
 )
 def shard_exists(shard_pth):
     r = requests.get(
-        "https://api.github.com/repos/regro/"
+        "https://api.github.com/repos/conda-forge/"
         "repodata-shards/contents/%s" % shard_pth,
         headers={"Authorization": "token %s" % os.environ["GITHUB_TOKEN"]},
     )
@@ -170,7 +170,7 @@ def push_shard(shard, shard_pth, subdir, pkg):
         }
 
         r = requests.put(
-            "https://api.github.com/repos/regro/"
+            "https://api.github.com/repos/conda-forge/"
             "repodata-shards/contents/%s" % shard_pth,
             headers={"Authorization": "token %s" % os.environ["GITHUB_TOKEN"]},
             json=data

@@ -369,7 +369,7 @@ def _load_current_data(make_releases, allow_unsafe):
 
 def _clone_repodata_shards():
     subprocess.run(
-        "git clone https://github.com/regro/repodata-shards.git",
+        "git clone https://github.com/conda-forge/repodata-shards.git",
         shell=True,
         check=True,
     )
