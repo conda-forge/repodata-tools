@@ -293,9 +293,6 @@ def _download_package(tmpdir, subdir, pkg, url, md5_checksum):
 def _make_release(subdir, pkg, shard, repo, repo_pth):
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
-        _download_package(
-            tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
-        )
         rel, curr_asts = get_or_make_release(
             repo,
             subdir,
@@ -304,7 +301,13 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
             make_commit=False,
         )
 
-        if split_pkg(os.path.join(subdir, pkg))[1] not in UNDISTRIBUTABLE:
+        if (
+            split_pkg(os.path.join(subdir, pkg))[1] not in UNDISTRIBUTABLE
+            and not any(ast.name == pkg for ast in curr_asts)
+        ):
+            _download_package(
+                tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
+            )
             ast = upload_asset(
                 rel,
                 curr_asts,
