@@ -6,6 +6,7 @@ import hmac
 import copy
 import sys
 import random
+import functools
 
 from git import Repo
 import tenacity
@@ -323,6 +324,46 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
         )
 
 
+@functools.lru_cache(maxsize=128)
+def _get_cached_repodata(subdir, label):
+    if label == "main":
+        r = requests.get(
+            "https://conda.anaconda.org/conda-forge/"
+            f"{subdir}/repodata_from_packages.json"
+        )
+    else:
+        r = requests.get(
+            "https://conda.anaconda.org/conda-forge/label/"
+            f"{label}/{subdir}/repodata.json"
+        )
+
+    if r.status_code != 200:
+        raise RuntimeError(f"Could not download repodata for {label}/{subdir}")
+
+    return r.json()
+
+
+def _remove_pkg_and_update_shard(subdir, pkg, shard, repo, repo_pth):
+    _, curr_asts = get_or_make_release(
+        repo,
+        subdir,
+        pkg,
+        repo_pth=repo_pth,
+        make_commit=False,
+    )
+    for ast in curr_asts:
+        if ast.name == pkg:
+            print("removing asset %s for %s/%s" % (ast, subdir, pkg), flush=True)
+            ast.delete_asset()
+
+    shard["url"] = "https://conda.anaconda.org/conda-forge/%s/%s" % (subdir, pkg)
+    for label in shard["labels"]:
+        rd = _get_cached_repodata(subdir, label)
+        if pkg in rd["packages"]:
+            shard["repodata"]["md5"] = rd["packages"][pkg]["md5"]
+            break
+
+
 def upload_packages(
     all_shards, rank, n_ranks, start_time, time_limit, max_write=400
 ):
@@ -347,12 +388,27 @@ def upload_packages(
         ])
         for pkg_index, subdir_pkg in tqdm.tqdm(enumerate(pkgs), total=len(pkgs)):
             subdir, pkg = os.path.split(subdir_pkg)
+            _, pkg_name, _, _ = split_pkg(subdir_pkg)
 
-            if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
+            if (
+                "conda.anaconda.org" in all_shards[subdir_pkg]["url"]
+                or (
+                    pkg_name in UNDISTRIBUTABLE
+                    and "conda.anaconda.org" not in all_shards[subdir_pkg]["url"]
+                )
+            ):
                 try:
-                    print("releasing %s" % subdir_pkg, flush=True)
                     shard = copy.deepcopy(all_shards[subdir_pkg])
-                    _make_release(subdir, pkg, shard, repo, tmpdir)
+                    if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
+                        print("releasing %s" % subdir_pkg, flush=True)
+                        _make_release(subdir, pkg, shard, repo, tmpdir)
+
+                    if (
+                        pkg_name in UNDISTRIBUTABLE
+                        and "conda.anaconda.org" not in all_shards[subdir_pkg]["url"]
+                    ):
+                        _remove_pkg_and_update_shard(subdir, pkg, shard, repo, tmpdir)
+
                 except RateLimitExceededException:
                     print(
                         "\n\nGitHub API rate limit exceeded - exiting\n\n",
