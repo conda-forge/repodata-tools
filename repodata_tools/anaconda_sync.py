@@ -52,7 +52,7 @@ def _build_shard(subdir, pkg, label):
                 f"/label/{label}/{subdir_pkg}"
             )
 
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=os.environ.get("RUNNER_TEMP", None)) as tmpdir:
             shard = make_repodata_shard_noretry(
                 subdir,
                 pkg,
