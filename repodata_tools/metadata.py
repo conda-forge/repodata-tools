@@ -22,4 +22,5 @@ UNINDEXABLE = [
 UNDISTRIBUTABLE = [
     "cudatoolkit",
     "cudnn",
+    "cutensor",
 ]
