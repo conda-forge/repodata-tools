@@ -123,7 +123,7 @@ def main():
     # pull event data
     with open(os.environ["GITHUB_EVENT_PATH"], 'r') as fp:
         event_data = json.load(fp)
-    assert event_data["action"] == "release"
+    assert event_data["action"] in ["release", "validate"]
 
     # package info
     subdir = event_data['client_payload']["subdir"]
