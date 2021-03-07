@@ -110,6 +110,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
     shards_to_write = set()
     for label in tqdm.tqdm(labels, desc="labels"):
         for subdir in CONDA_FORGE_SUBIDRS:
+            print(f"{label}/{subdir}", flush=True)
             if label == "main":
                 r = requests.get(
                     "https://conda.anaconda.org/conda-forge/"
@@ -135,10 +136,8 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
             ])
 
             total_chunks = len(all_pkgs) // 64 + 1
-            for chunk_index, pkg_chunk in tqdm.tqdm(
-                enumerate(chunk_iterable(all_pkgs, 64)),
-                desc=f"{label}/{subdir}",
-                total=total_chunks,
+            for chunk_index, pkg_chunk in enumerate(
+                chunk_iterable(all_pkgs, 64)
             ):
                 jobs = []
                 max_bytes = 0
