@@ -324,7 +324,7 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
             print(f"uploaded asset {subdir}/{pkg}: {shard['url']}", flush=True)
 
         if ast is not None and old_url != ast.browser_download_url and distributable:
-            print(f"updating shard url for {subdir}{pkg}", flush=True)
+            print(f"updating shard url for {subdir}/{pkg}", flush=True)
             shard["url"] = ast.browser_download_url
             with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
                 json.dump(shard, fp, sort_keys=True, indent=2)
