@@ -8,7 +8,6 @@ import sys
 import random
 import functools
 
-from git import Repo
 import tenacity
 import click
 import rapidjson as json
@@ -52,7 +51,9 @@ def _build_shard(subdir, pkg, label):
                 f"/label/{label}/{subdir_pkg}"
             )
 
-        with tempfile.TemporaryDirectory(dir=os.environ.get("RUNNER_TEMP", None)) as tmpdir:
+        with tempfile.TemporaryDirectory(
+            dir=os.environ.get("RUNNER_TEMP", None)
+        ) as tmpdir:
             shard = make_repodata_shard_noretry(
                 subdir,
                 pkg,
@@ -83,7 +84,7 @@ def _write_shards(shards_to_write, all_shards, msg):
 
             subprocess.run(f"git add {pth}", shell=True)
 
-    subprocess.run(f"git status", shell=True)    
+    subprocess.run("git status", shell=True)
     subprocess.run(
         f"git commit --allow-empty -m '{msg} [ci skip] [cf admin skip] ***NO_CI***'",
         shell=True,
@@ -302,10 +303,16 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
             make_commit=False,
         )
 
-        if (
-            split_pkg(os.path.join(subdir, pkg))[1] not in UNDISTRIBUTABLE
-            and not any(ast.name == pkg for ast in curr_asts)
-        ):
+        ast = None
+        for _ast in curr_asts:
+            if _ast.name == pkg:
+                ast = _ast
+                break
+
+        old_url = shard["url"]
+        distributable = split_pkg(os.path.join(subdir, pkg))[1] not in UNDISTRIBUTABLE
+
+        if distributable and ast is None:
             _download_package(
                 tmpdir, subdir, pkg, shard["url"], shard["repodata"]["md5"]
             )
@@ -315,17 +322,20 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
                 f"{tmpdir}/{subdir}/{pkg}",
                 content_type="application/x-bzip2",
             )
+            print(f"uploaded asset {subdir}/{pkg}: {shard['url']}", flush=True)
+
+        if ast is not None and old_url != ast.browser_download_url and distributable:
+            print(f"updating shard url for {subdir}{pkg}", flush=True)
             shard["url"] = ast.browser_download_url
+            with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
+                json.dump(shard, fp, sort_keys=True, indent=2)
 
-        with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
-            json.dump(shard, fp, sort_keys=True, indent=2)
-
-        upload_asset(
-            rel,
-            curr_asts,
-            f"{tmpdir}/repodata_shard.json",
-            content_type="application/json",
-        )
+            upload_asset(
+                rel,
+                curr_asts,
+                f"{tmpdir}/repodata_shard.json",
+                content_type="application/json",
+            )
 
 
 @functools.lru_cache(maxsize=128)
@@ -377,13 +387,6 @@ def upload_packages(
     repo = gh.get_repo("conda-forge/releases")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        Repo.clone_from("https://github.com/conda-forge/releases.git", tmpdir)
-        subprocess.run(
-            f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${GITHUB_TOKEN}@github.com/conda-forge/releases.git",
-            shell=True,
-            check=True,
-        )
         shards_to_write = set()
         pkgs = sorted([
             subdir_pkg
