@@ -326,15 +326,16 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
         if ast is not None and old_url != ast.browser_download_url and distributable:
             print(f"updating shard url for {subdir}/{pkg}", flush=True)
             shard["url"] = ast.browser_download_url
-            with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
-                json.dump(shard, fp, sort_keys=True, indent=2)
 
-            upload_asset(
-                rel,
-                curr_asts,
-                f"{tmpdir}/repodata_shard.json",
-                content_type="application/json",
-            )
+        with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
+            json.dump(shard, fp, sort_keys=True, indent=2)
+
+        upload_asset(
+            rel,
+            curr_asts,
+            f"{tmpdir}/repodata_shard.json",
+            content_type="application/json",
+        )
 
 
 @functools.lru_cache(maxsize=128)
