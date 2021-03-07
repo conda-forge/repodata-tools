@@ -387,6 +387,7 @@ def upload_packages(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         shards_to_write = set()
+        num_undistributable = 0
         pkgs = sorted([
             subdir_pkg
             for subdir_pkg in all_shards
@@ -428,12 +429,14 @@ def upload_packages(
                 else:
                     all_shards[subdir_pkg] = shard
                     shards_to_write.add(subdir_pkg)
+                    if pkg_name in UNDISTRIBUTABLE:
+                        num_undistributable += 1
                     print("made %d releases" % len(shards_to_write), flush=True)
                 finally:
                     time.sleep(random.uniform(12.5, 17.5) * upload_sleep_factor)
 
             if (
-                len(shards_to_write) >= max_write
+                (len(shards_to_write) - num_undistributable) >= max_write
                 or time.time() - start_time > time_limit
             ):
                 break
