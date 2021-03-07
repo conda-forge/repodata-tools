@@ -8,6 +8,7 @@ import sys
 import random
 import functools
 
+from git import Repo
 import tenacity
 import click
 import rapidjson as json
@@ -387,6 +388,17 @@ def upload_packages(
     repo = gh.get_repo("conda-forge/releases")
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        Repo.clone_from(
+            "https://github.com/regro/releases.git",
+            tmpdir,
+            multi_options=["--no-tags"],
+        )
+        subprocess.run(
+            f"cd {tmpdir} && git remote set-url --push origin "
+            "https://${GITHUB_TOKEN}@github.com/regro/releases.git",
+            shell=True,
+            check=True,
+        )
         shards_to_write = set()
         num_undistributable = 0
         pkgs = sorted([
