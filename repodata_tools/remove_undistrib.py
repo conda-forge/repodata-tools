@@ -127,7 +127,7 @@ def remove_undistributable(
         )
         subprocess.run(
             f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${GITHUB_TOKEN}@github.com/regro/releases.git",
+            "https://${DELTAG_GITHUB_TOKEN}@github.com/regro/releases.git",
             shell=True,
             check=True,
         )
