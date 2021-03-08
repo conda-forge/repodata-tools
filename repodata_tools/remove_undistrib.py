@@ -96,7 +96,10 @@ def _remove_pkg_and_update_shard(subdir, pkg, shard, repo, repo_pth):
     tagname = rel.tag_name
     rel.delete_release()
     try:
-        subprocess.run(f"git push --delete origin \"{tagname}\"", shell=True)
+        subprocess.run(
+            f"cd {repo_pth} && git push --delete origin \"{tagname}\"",
+            shell=True,
+        )
     except Exception:
         pass
 
