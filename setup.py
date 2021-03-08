@@ -12,5 +12,6 @@ setup(
         generate-app-token=repodata_tools.tokens:main_gen
         push-app-token=repodata_tools.tokens:main_push
         run-repodata-worker=repodata_tools.repoworker:main
+        remove-undistributable=repodata_tools.remove_undistrib:main
     """,
 )

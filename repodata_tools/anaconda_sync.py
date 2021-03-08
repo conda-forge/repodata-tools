@@ -328,15 +328,15 @@ def _make_release(subdir, pkg, shard, repo, repo_pth):
             print(f"updating shard url for {subdir}/{pkg}", flush=True)
             shard["url"] = ast.browser_download_url
 
-        with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
-            json.dump(shard, fp, sort_keys=True, indent=2)
-
-        upload_asset(
-            rel,
-            curr_asts,
-            f"{tmpdir}/repodata_shard.json",
-            content_type="application/json",
-        )
+        # we don't upload repodata shards anymore
+        # with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
+        #     json.dump(shard, fp, sort_keys=True, indent=2)
+        # upload_asset(
+        #     rel,
+        #     curr_asts,
+        #     f"{tmpdir}/repodata_shard.json",
+        #     content_type="application/json",
+        # )
 
 
 @functools.lru_cache(maxsize=128)
@@ -356,27 +356,6 @@ def _get_cached_repodata(subdir, label):
         raise RuntimeError(f"Could not download repodata for {label}/{subdir}")
 
     return r.json()
-
-
-def _remove_pkg_and_update_shard(subdir, pkg, shard, repo, repo_pth):
-    _, curr_asts = get_or_make_release(
-        repo,
-        subdir,
-        pkg,
-        repo_pth=repo_pth,
-        make_commit=False,
-    )
-    for ast in curr_asts:
-        if ast.name == pkg:
-            print("removing asset %s for %s/%s" % (ast, subdir, pkg), flush=True)
-            ast.delete_asset()
-
-    shard["url"] = "https://conda.anaconda.org/conda-forge/%s/%s" % (subdir, pkg)
-    for label in shard["labels"]:
-        rd = _get_cached_repodata(subdir, label)
-        if pkg in rd["packages"]:
-            shard["repodata"]["md5"] = rd["packages"][pkg]["md5"]
-            break
 
 
 def upload_packages(
@@ -400,7 +379,6 @@ def upload_packages(
             check=True,
         )
         shards_to_write = set()
-        num_undistributable = 0
         pkgs = sorted([
             subdir_pkg
             for subdir_pkg in all_shards
@@ -412,22 +390,12 @@ def upload_packages(
 
             if (
                 "conda.anaconda.org" in all_shards[subdir_pkg]["url"]
-                or (
-                    pkg_name in UNDISTRIBUTABLE
-                    and "conda.anaconda.org" not in all_shards[subdir_pkg]["url"]
-                )
+                and pkg_name not in UNDISTRIBUTABLE
             ):
                 try:
+                    print("releasing %s" % subdir_pkg, flush=True)
                     shard = copy.deepcopy(all_shards[subdir_pkg])
-                    if "conda.anaconda.org" in all_shards[subdir_pkg]["url"]:
-                        print("releasing %s" % subdir_pkg, flush=True)
-                        _make_release(subdir, pkg, shard, repo, tmpdir)
-
-                    if (
-                        pkg_name in UNDISTRIBUTABLE
-                        and "conda.anaconda.org" not in all_shards[subdir_pkg]["url"]
-                    ):
-                        _remove_pkg_and_update_shard(subdir, pkg, shard, repo, tmpdir)
+                    _make_release(subdir, pkg, shard, repo, tmpdir)
 
                 except RateLimitExceededException:
                     print(
@@ -442,14 +410,12 @@ def upload_packages(
                 else:
                     all_shards[subdir_pkg] = shard
                     shards_to_write.add(subdir_pkg)
-                    if pkg_name in UNDISTRIBUTABLE:
-                        num_undistributable += 1
                     print("made %d releases" % len(shards_to_write), flush=True)
                 finally:
                     time.sleep(random.uniform(12.5, 17.5) * upload_sleep_factor)
 
             if (
-                (len(shards_to_write) - num_undistributable) >= max_write
+                len(shards_to_write) >= max_write
                 or time.time() - start_time > time_limit
             ):
                 break

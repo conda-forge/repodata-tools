@@ -166,14 +166,14 @@ def main():
             md5_checksum=md5_val,
         )
 
-        rel, curr_asts = get_or_make_release(
-            repo,
-            subdir,
-            pkg,
-            make_commit=False,
-        )
-
         if upload_pkg:
+            rel, curr_asts = get_or_make_release(
+                repo,
+                subdir,
+                pkg,
+                make_commit=False,
+            )
+
             ast = upload_asset(
                 rel,
                 curr_asts,
@@ -182,15 +182,15 @@ def main():
             )
             shard["url"] = ast.browser_download_url
 
-        with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
-            json.dump(shard, fp, sort_keys=True, indent=2)
-
-        upload_asset(
-            rel,
-            curr_asts,
-            f"{tmpdir}/repodata_shard.json",
-            content_type="application/json",
-        )
+            # we don't upload shards to releases anymore
+            # with open(f"{tmpdir}/repodata_shard.json", "w") as fp:
+            #     json.dump(shard, fp, sort_keys=True, indent=2)
+            # upload_asset(
+            #     rel,
+            #     curr_asts,
+            #     f"{tmpdir}/repodata_shard.json",
+            #     content_type="application/json",
+            # )
 
     # push the repodata shard
     if add_shard and not shard_pth_exists:
