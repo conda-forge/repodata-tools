@@ -229,6 +229,11 @@ def main(rank, n_ranks, time_limit):
 
     print("removing undistributable packages", flush=True)
 
+    try:
+        _push_repo()
+    except Exception:
+        pass
+
     remove_undistributable(
         all_shards,
         rank,
