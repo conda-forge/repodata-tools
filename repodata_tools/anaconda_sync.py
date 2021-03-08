@@ -368,13 +368,13 @@ def upload_packages(
 
     with tempfile.TemporaryDirectory() as tmpdir:
         Repo.clone_from(
-            "https://github.com/regro/releases.git",
+            "https://github.com/conda-forge/releases.git",
             tmpdir,
             multi_options=["--no-tags"],
         )
         subprocess.run(
             f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${GITHUB_TOKEN}@github.com/regro/releases.git",
+            "https://${GITHUB_TOKEN}@github.com/conda-forge/releases.git",
             shell=True,
             check=True,
         )
