@@ -393,7 +393,7 @@ def upload_packages(
             if (
                 "conda.anaconda.org" in all_shards[subdir_pkg]["url"]
                 and pkg_name not in UNDISTRIBUTABLE
-                and pkg_name not in UNINDEXABLE
+                and subdir_pkg not in UNINDEXABLE
             ):
                 try:
                     print("releasing %s" % subdir_pkg, flush=True)
