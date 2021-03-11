@@ -35,7 +35,9 @@ from .releases import (
     get_or_make_release,
     upload_asset
 )
-from .metadata import CONDA_FORGE_SUBIDRS, UNDISTRIBUTABLE
+from .metadata import (
+    CONDA_FORGE_SUBIDRS, UNDISTRIBUTABLE, UNINDEXABLE
+)
 
 
 def _build_shard(subdir, pkg, label):
@@ -391,6 +393,7 @@ def upload_packages(
             if (
                 "conda.anaconda.org" in all_shards[subdir_pkg]["url"]
                 and pkg_name not in UNDISTRIBUTABLE
+                and pkg_name not in UNINDEXABLE
             ):
                 try:
                     print("releasing %s" % subdir_pkg, flush=True)
