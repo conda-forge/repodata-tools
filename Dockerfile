@@ -10,6 +10,8 @@ RUN cd /opt/app && \
     conda clean -tipsy && \
     find /opt/conda -follow -type f -name '*.a' -delete && \
     find /opt/conda -follow -type f -name '*.pyc' -delete && \
-    conda clean -afy
+    conda clean -afy && \
+    cd .. && \
+    chmod -R 755 /opt/conda
 
 CMD ["tini", "-s", "--", "/opt/app/run_app.sh"]
