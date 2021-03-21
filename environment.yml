@@ -1,0 +1,32 @@
+name: test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - anaconda-client
+  - bzip2
+  - click
+  - conda
+  - conda-build
+  - conda-package-handling
+  - cryptography
+  - curl
+  - fastapi
+  - flake8
+  - git
+  - gitpython
+  - joblib
+  - license-expression
+  - pip
+  - pygithub
+  - pyjwt
+  - pynacl
+  - pytest
+  - python-rapidjson
+  - pyyaml
+  - rapidjson
+  - requests
+  - tenacity
+  - tqdm
+  - wget
+  - uvicorn
