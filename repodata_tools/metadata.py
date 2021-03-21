@@ -24,6 +24,7 @@ UNDISTRIBUTABLE = [
     "cudatoolkit",
     "cudnn",
     "cutensor",
+    "cusparselt",
 ]
 
 UNDISTRIBUTABLE_HASH = hashlib.sha256(
