@@ -6,6 +6,7 @@ ADD http://www.randomtext.me/api/gibberish /opt/docker/etc/gibberish
 COPY . /opt/app
 RUN cd /opt/app && \
     conda env create --file environment.yml && \
+    source activate test && \
     pip install -e . && \
     conda clean -tipsy && \
     find /opt/conda -follow -type f -name '*.a' -delete && \
