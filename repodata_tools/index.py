@@ -17,7 +17,10 @@ CHANNELDATA_VERSION = 1
 REPODATA_VERSION = 1
 
 GH = github.Github(os.environ["GITHUB_TOKEN"])
-REPODATA = GH.get_repo("conda-forge/repodata")
+REPODATA_ORG = "conda-forge"
+REPODATA_NAME = "repodata-shards"
+REPODATA_REPO = f"{REPODATA_ORG}/{REPODATA_NAME}"
+REPODATA = GH.get_repo(REPODATA_REPO)
 
 INIT_REPODATA = {
     'info': {},
@@ -54,7 +57,7 @@ def upload_repodata_asset(rel, pth, content_type):
     fn = os.path.basename(pth)
     return (
         fn,
-        f"https://github.com/conda-forge/repodata/releases/download/{tag}/{fn}",
+        f"https://github.com/{REPODATA_REPO}/releases/download/{tag}/{fn}",
     )
 
 

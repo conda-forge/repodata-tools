@@ -5,6 +5,8 @@ import tenacity
 import rapidjson as json
 import requests
 
+from .index import REPODATA_REPO
+
 
 @tenacity.retry(
     wait=tenacity.wait_random_exponential(multiplier=1, max=10),
@@ -14,6 +16,7 @@ import requests
 def get_latest_links():
     return json.load(io.StringIO(bz2.decompress(
         requests.get(
-            "https://github.com/conda-forge/repodata/releases/latest/download/links.json.bz2"
+            f"https://github.com/{REPODATA_REPO}/releases"
+            "/latest/download/links.json.bz2"
         ).content
     ).decode("utf-8")))
