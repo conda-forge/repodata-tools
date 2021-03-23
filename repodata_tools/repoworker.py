@@ -9,6 +9,7 @@ import copy
 from datetime import datetime
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+import pytz
 
 import github
 import tenacity
@@ -450,6 +451,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 all_links["current-shas"].get("repodata-patches-sha", None)
             )
             repatch_all_pkgs = old_patch_sha != new_patch_sha
+            utcnow = datetime.datetime.now().astimezone(pytz.UTC)
 
             updated_data = set()
             if (
@@ -460,7 +462,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 # we have to make a release if we need to repatch everything as well
                 (new_shards is None or len(new_shards) > 0 or repatch_all_pkgs)
             ):
-                tag = datetime.utcnow().strftime("%Y.%m.%d.%H.%M.%S")
+                tag = utcnow.strftime("%Y.%m.%d.%H.%M.%S")
                 rel = REPODATA.create_git_tag_and_release(
                     tag,
                     "",
@@ -633,6 +635,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                     futures = []
 
                 with timer(HEAD, "writing and uploading links"):
+                    all_links["updated_at"] = utcnow.strftime("%Y-%m-%d %H:%M:%S %Z%z")
                     futures.extend(
                         _write_compress_and_start_upload(
                             all_links,

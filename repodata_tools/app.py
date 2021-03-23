@@ -24,8 +24,10 @@ def _replace_links():
     LINKS = new_links
     gc.collect()
     global LAST_UPDATED
-    fmt = '%Y-%m-%d %H:%M:%S %Z%z'
-    LAST_UPDATED = datetime.datetime.now().astimezone(pytz.UTC).strftime(fmt)
+    LAST_UPDATED = LINKS.get(
+        "updated_at",
+        datetime.datetime.now().astimezone(pytz.UTC).strftime("%Y-%m-%d %H:%M:%S %Z%z")
+    )
     print("**************** DONE UPDATING LINKS ****************", flush=True)
 
 
