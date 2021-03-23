@@ -23,6 +23,7 @@ dependencies:
   - pynacl
   - pytest
   - python-rapidjson
+  - pytz
   - pyyaml
   - rapidjson
   - requests

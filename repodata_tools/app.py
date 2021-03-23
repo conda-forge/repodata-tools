@@ -2,24 +2,43 @@ import os
 import gc
 import hmac
 import hashlib
+import datetime
 
-from fastapi import FastAPI, HTTPException, Request
+import pytz
+
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Response
 from fastapi.responses import RedirectResponse
 
 from repodata_tools.links import get_latest_links
 
 LINKS = get_latest_links()
+LAST_UPDATED = None
 
 app = FastAPI()
 
 
+def _replace_links():
+    print("**************** UPDATING LINKS ****************", flush=True)
+    global LINKS
+    new_links = get_latest_links()
+    LINKS = new_links
+    gc.collect()
+    global LAST_UPDATED
+    fmt = '%Y-%m-%d %H:%M:%S %Z%z'
+    LAST_UPDATED = datetime.datetime.now().astimezone(pytz.UTC).strftime(fmt)
+    print("**************** DONE UPDATING LINKS ****************", flush=True)
+
+
 @app.get("/")
-async def root():
-    return {"message": "this is the index!"}
+async def root(response: Response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return {"update_at": LAST_UPDATED}
 
 
 @app.post("/update-links")
-async def update_links(request: Request, status_code=204):
+async def update_links(
+    request: Request, background_tasks: BackgroundTasks, status_code=204
+):
     body = await request.body()
     signature = request.headers.get('X-Hub-Signature', '')
     our_hash = hmac.new(
@@ -40,12 +59,8 @@ async def update_links(request: Request, status_code=204):
         if event == "ping":
             return "pong"
         elif blob["action"] == "released":
-            print("**************** UPDATING LINKS ****************", flush=True)
-            global LINKS
-            new_links = get_latest_links()
-            LINKS = new_links
-            gc.collect()
-            print("**************** DONE UPDATING LINKS ****************", flush=True)
+            background_tasks.add_task(_replace_links)
+            return {"message": "started link update!"}
 
 
 ################################################################################
@@ -54,7 +69,7 @@ async def update_links(request: Request, status_code=204):
 
 @app.get("/conda-forge-sparta/label/{label}")
 async def root_label(label):
-    return {"message": "this is the index!"}
+    return {"message": "this is the index for conda-forge-sparta/label/%s!" % label}
 
 
 @app.get("/conda-forge-sparta/label/{label}/channeldata.json")
@@ -71,7 +86,11 @@ async def channeldata_label(label):
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/")
 async def subdir_root_label(label, subdir):
-    return {"message": "this is the index!"}
+    return {
+        "message": "this is the index for conda-forge-sparta/label/%s/%s!" % (
+            label, subdir
+        )
+    }
 
 
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/repodata.json")
@@ -164,7 +183,7 @@ async def subdir_pkg_label(label, subdir, pkg):
 
 @app.get("/conda-forge-sparta/")
 async def root_main():
-    return {"message": "this is the index!"}
+    return {"message": "this is the index for the conda-forge-sparta channel!"}
 
 
 @app.get("/conda-forge-sparta/channeldata.json")
@@ -181,7 +200,7 @@ async def channeldata():
 
 @app.get("/conda-forge-sparta/{subdir}/")
 async def subdir_root(subdir):
-    return {"message": "this is the index!"}
+    return {"message": "this is the index for conda-forge-sparta/%s!" % subdir}
 
 
 @app.get("/conda-forge-sparta/{subdir}/repodata.json")
