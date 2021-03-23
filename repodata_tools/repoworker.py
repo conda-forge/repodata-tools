@@ -32,6 +32,7 @@ from .index import (
     build_current_repodata,
     GH,
     REPODATA_NAME,
+    REPODATA_REPO,
 )
 
 WORKDIR = "repodata_products"
@@ -389,6 +390,14 @@ def _clone_repodata_shards():
     )
 
 
+def _clone_repodata():
+    subprocess.run(
+        f"git clone https://github.com/{REPODATA_REPO}.git",
+        shell=True,
+        check=True,
+    )
+
+
 def _get_repodata_sha():
     repo_sha = subprocess.run(
         f"cd {REPODATA_NAME} && git rev-parse --verify HEAD",
@@ -431,6 +440,8 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         os.makedirs(WORKDIR, exist_ok=True)
         if not os.path.exists("repodata-shards"):
             _clone_repodata_shards()
+        if not os.path.exists(REPODATA_NAME):
+            _clone_repodata()
         if not os.path.exists("conda-forge-repodata-patches-feedstock"):
             _clone_and_init_repodata_patches()
 
