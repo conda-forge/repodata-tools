@@ -1,9 +1,9 @@
-import io
 import bz2
+import tempfile
+import subprocess
 
 import tenacity
 import rapidjson as json
-import requests
 
 from .index import REPODATA_REPO
 
@@ -14,9 +14,12 @@ from .index import REPODATA_REPO
     reraise=True,
 )
 def get_latest_links():
-    return json.load(io.StringIO(bz2.decompress(
-        requests.get(
-            f"https://github.com/{REPODATA_REPO}/releases"
-            "/latest/download/links.json.bz2"
-        ).content
-    ).decode("utf-8")))
+    with tempfile.TemporaryDirectory() as tmpdir:
+        subprocess.run(
+            f"cd {tmpdir} && wget --quiet https://github.com/{REPODATA_REPO}/releases"
+            "/latest/download/links.json.bz2",
+            shell=True,
+            check=True,
+        )
+        with bz2.open(f"{tmpdir}/links.json.bz2") as fp:
+            return json.loads(fp.read().decode("utf-8"))
