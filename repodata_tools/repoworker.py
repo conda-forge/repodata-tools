@@ -111,7 +111,7 @@ def _fetch_patched_repodata(links, subdir, label):
         return rd
 
 
-def _update_repodata_from_shards(repodata, links, new_shards, subdir):
+def _update_repodata_from_shards(repodata, links, new_shards, removed_shards, subdir):
     all_shards = {}
     read_subdir_shards("repodata-shards", subdir, all_shards, shard_paths=new_shards)
     print(
@@ -127,6 +127,7 @@ def _update_repodata_from_shards(repodata, links, new_shards, subdir):
         subdir,
         all_shards,
         fetch_repodata=None if DEBUG else _fetch_repodata,
+        removed_shards=removed_shards,
     )
 
 
@@ -246,25 +247,34 @@ def _get_new_shards_from_repo(old_sha):
     ).stdout.decode("utf-8").strip()
     print(f"{HEAD}old shards sha={old_sha}", flush=True)
     print(f"{HEAD}new shards sha={new_sha}", flush=True)
-    new_shards = subprocess.run(
-        "cd repodata-shards && git diff --name-only %s %s" % (old_sha, new_sha),
+    new_shards_output = subprocess.run(
+        "cd repodata-shards && git diff --name-status %s %s" % (old_sha, new_sha),
         shell=True,
         check=True,
         capture_output=True,
     ).stdout.decode("utf-8")
     new_shards = [
-        os.path.join("repodata-shards", line.strip())
-        for line in new_shards.splitlines()
+        os.path.join("repodata-shards", line.strip().split()[1].strip())
+        for line in new_shards_output.splitlines()
+        if line.strip().split()[0].strip() != "D"
     ]
-    print(f"{HEAD}found {len(new_shards)} new shards", flush=True)
+    print(f"{HEAD}found {len(new_shards)} new or modified shards", flush=True)
 
-    return old_sha, new_sha, new_shards
+    removed_shards = [
+        os.path.join("repodata-shards", line.strip().split()[1].strip())
+        for line in new_shards_output.splitlines()
+        if line.strip().split()[0].strip() == "D"
+    ]
+    print(f"{HEAD}found {len(removed_shards)} removed shards", flush=True)
+
+    return old_sha, new_sha, new_shards, removed_shards
 
 
 def _get_new_shards(old_sha):
     if old_sha is None:
         print(f"{HEAD}doing a full rebuild of repodata products", flush=True)
         new_shards = None
+        removed_shards = None
         new_sha = subprocess.run(
             "cd repodata-shards && git rev-parse --verify HEAD",
             shell=True,
@@ -273,9 +283,11 @@ def _get_new_shards(old_sha):
         ).stdout.decode("utf-8").strip()
     else:
         with timer(HEAD, "pulling new shards"):
-            old_sha, new_sha, new_shards = _get_new_shards_from_repo(old_sha)
+            old_sha, new_sha, new_shards, removed_shards = _get_new_shards_from_repo(
+                old_sha
+            )
 
-    return old_sha, new_sha, new_shards
+    return old_sha, new_sha, new_shards, removed_shards
 
 
 def _update_and_reimport_patch_fns(old_sha):
@@ -443,7 +455,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         build_start_time = time.time()
 
         with timer(HEAD, "doing repodata products rebuild"), ThreadPoolExecutor(max_workers=8) as exec:  # noqa
-            old_sha, new_sha, new_shards = _get_new_shards(
+            old_sha, new_sha, new_shards, removed_shards = _get_new_shards(
                 all_links["current-shas"].get("repodata-shards-sha", None)
             )
             # TODO force repatch if local data is inconsistent
@@ -460,7 +472,13 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 # None is a full rebuild, otherwise len > 0 means we have new ones
                 # to add
                 # we have to make a release if we need to repatch everything as well
-                (new_shards is None or len(new_shards) > 0 or repatch_all_pkgs)
+                (
+                    new_shards is None
+                    or len(new_shards) > 0
+                    or removed_shards is None
+                    or len(removed_shards) > 0
+                    or repatch_all_pkgs
+                )
             ):
                 tag = utcnow.strftime("%Y.%m.%d.%H.%M.%S")
                 rel = REPODATA.create_git_tag_and_release(
@@ -488,6 +506,16 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                     # this is a sentinal that indicates a full rebuild
                     new_subdir_shards = None
 
+                if removed_shards is not None:
+                    removed_subdir_shards = [
+                        k
+                        for k in removed_shards
+                        if k.startswith(f"repodata-shards/shards/{subdir}/")
+                    ]
+                else:
+                    # this is a sentinal that indicates a full rebuild
+                    removed_subdir_shards = None
+
                 if subdir not in all_repodata:
                     all_repodata[subdir] = {}
                 if subdir not in all_patched_repodata:
@@ -496,12 +524,18 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 subdir_updated_data = set()
 
                 with timer(HEAD, "processing shards for subdir %s" % subdir):
-                    if new_subdir_shards is None or len(new_subdir_shards) > 0:
+                    if (
+                        new_subdir_shards is None
+                        or len(new_subdir_shards) > 0
+                        or removed_subdir_shards is None
+                        or len(removed_subdir_shards) > 0
+                    ):
                         with timer(HEAD, "making repodata", indent=1):
                             subdir_updated_data = _update_repodata_from_shards(
                                 all_repodata,
                                 all_links,
                                 new_subdir_shards,
+                                removed_subdir_shards,
                                 subdir,
                             )
                             updated_data |= subdir_updated_data
@@ -608,7 +642,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             all_links["current-shas"]["repodata-shards-sha"] = new_sha
             all_links["current-shas"]["repodata-patches-sha"] = new_patch_sha
 
-            if updated_data:
+            if updated_data and make_releases:
                 with timer(HEAD, "(re)building channel data"):
                     futures.extend(_build_channel_data(
                         all_channeldata,

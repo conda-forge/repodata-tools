@@ -246,13 +246,22 @@ def build_or_update_links_and_repodata(
     shards,
     override_labels=None,
     fetch_repodata=None,
+    removed_shards=None,
 ):
+    removed_shards = removed_shards or []
     if subdir not in repodata:
         repodata[subdir] = {}
 
     override_labels = override_labels or {}
 
     updated_data = set()
+
+    for subdir_pkg in removed_shards:
+        for label in repodata[subdir]:
+            if subdir_pkg in repodata[subdir][label]["packages"]:
+                del repodata[subdir][label]["packages"][subdir_pkg]
+        if subdir_pkg in links:
+            del links["packages"][subdir_pkg]
 
     for subdir_pkg, shard in shards.items():
         shard["labels"] = override_labels.get(subdir_pkg, shard["labels"])
