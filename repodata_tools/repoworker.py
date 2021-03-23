@@ -451,7 +451,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 all_links["current-shas"].get("repodata-patches-sha", None)
             )
             repatch_all_pkgs = old_patch_sha != new_patch_sha
-            utcnow = datetime.datetime.now().astimezone(pytz.UTC)
+            utcnow = datetime.now().astimezone(pytz.UTC)
 
             updated_data = set()
             if (
