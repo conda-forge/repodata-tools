@@ -37,7 +37,7 @@ def _replace_links():
 @app.get("/")
 async def root(response: Response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    return {"update_at": LAST_UPDATED}
+    return {"updated_at": LAST_UPDATED}
 
 
 @app.post("/update-links")
