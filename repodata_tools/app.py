@@ -12,7 +12,10 @@ from fastapi.responses import RedirectResponse
 from repodata_tools.links import get_latest_links
 
 LINKS = get_latest_links()
-LAST_UPDATED = None
+LAST_UPDATED = LINKS.get(
+    "updated_at",
+    datetime.datetime.now().astimezone(pytz.UTC).strftime("%Y-%m-%d %H:%M:%S %Z%z")
+)
 
 app = FastAPI()
 
