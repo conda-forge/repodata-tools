@@ -1,4 +1,3 @@
-import bz2
 import tempfile
 import subprocess
 
@@ -17,9 +16,9 @@ def get_latest_links():
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(
             f"cd {tmpdir} && wget --quiet https://github.com/{REPODATA_REPO}/releases"
-            "/latest/download/links.json.bz2",
+            "/latest/download/links.json.bz2 && bunzip2 -q links.json.bz2",
             shell=True,
             check=True,
         )
-        with bz2.open(f"{tmpdir}/links.json.bz2") as fp:
-            return json.loads(fp.read().decode("utf-8"))
+        with open(f"{tmpdir}/links.json") as fp:
+            return json.loads(fp.read())
