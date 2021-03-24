@@ -18,7 +18,7 @@ REPODATA_VERSION = 1
 
 GH = github.Github(os.environ["GITHUB_TOKEN"])
 REPODATA_ORG = "conda-forge"
-REPODATA_NAME = "repodata"
+REPODATA_NAME = "repodata-shards"
 REPODATA_REPO = f"{REPODATA_ORG}/{REPODATA_NAME}"
 REPODATA = GH.get_repo(REPODATA_REPO)
 
