@@ -25,6 +25,7 @@ UNDISTRIBUTABLE = [
     "cudnn",
     "cutensor",
     "cusparselt",
+    "msmpi",
 ]
 
 UNDISTRIBUTABLE_HASH = hashlib.sha256(
