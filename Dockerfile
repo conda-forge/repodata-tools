@@ -5,6 +5,7 @@ ADD http://worldtimeapi.org/api/timezone/Europe/London.txt /opt/docker/etc/gibbe
 
 COPY . /opt/app
 RUN cd /opt/app && \
+    chmod a+x /opt/app/run_app.sh && \
     conda env create --file environment.yml && \
     /bin/bash -c "source activate test && pip install -e . " && \
     conda clean -tipsy && \
@@ -12,4 +13,8 @@ RUN cd /opt/app && \
     find /opt/conda -follow -type f -name '*.pyc' -delete && \
     conda clean -afy
 
-CMD ["tini", "-s", "--", "/opt/app/run_app.sh"]
+# Run the image as a non-root user
+RUN adduser -D myuser
+USER myuser
+
+CMD /opt/app/run_app.sh
