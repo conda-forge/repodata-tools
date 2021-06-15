@@ -15,4 +15,5 @@ RUN cd /opt/app && \
     conda clean -afy
 
 ENTRYPOINT []
-CMD /opt/app/run_app.sh
+WORKDIR /opt/webapp
+CMD run_app.sh
