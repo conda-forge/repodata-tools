@@ -1,7 +1,7 @@
 FROM condaforge/miniforge3
 
 # bust the docker cache so that we always rerun the installs below
-ADD http://www.randomtext.me/api/gibberish /opt/docker/etc/gibberish
+ADD http://worldtimeapi.org/api/timezone/Europe/London.txt /opt/docker/etc/gibberish
 
 COPY . /opt/app
 RUN cd /opt/app && \
