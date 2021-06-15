@@ -14,4 +14,5 @@ RUN cd /opt/app && \
     find /opt/conda -follow -type f -name '*.pyc' -delete && \
     conda clean -afy
 
+ENTRYPOINT []
 CMD /opt/app/run_app.sh
