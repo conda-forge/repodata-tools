@@ -16,4 +16,4 @@ RUN cd /opt/app && \
 
 ENTRYPOINT []
 WORKDIR /opt/app
-CMD run_app.sh
+CMD ["/bin/bash", "run_app.sh"]
