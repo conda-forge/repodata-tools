@@ -8,7 +8,7 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(HERE, "metadata.json", "w")) as f:
+with open(os.path.join(HERE, "metadata.json"), "r") as f:
     metadata = json.load(f)
 
 CONDA_FORGE_SUBIDRS = CONDA_FORGE_SUBDIRS = metadata["subdirs"]
