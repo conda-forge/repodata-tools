@@ -3,30 +3,20 @@
 # - we use a mod operator to distribute them over tasks
 # - they are ordered so that mod by 4 puts the biggest subdirs on separate tasks
 import hashlib
+import json
+import os
 
-CONDA_FORGE_SUBIDRS = [
-    "linux-64", "osx-64", "win-64", "noarch",
-    "linux-aarch64", "linux-ppc64le", "osx-arm64"
-]
+HERE = os.path.dirname(os.path.abspath(__file__))
 
+with open(os.path.join(HERE, "metadata.json"), "r") as f:
+    metadata = json.load(f)
+
+CONDA_FORGE_SUBIDRS = CONDA_FORGE_SUBDIRS = metadata["subdirs"]
 
 # these packages cannot be indexed
-UNINDEXABLE = [
-    "linux-64/pyside2-2.0.0~alpha0-py27_0.tar.bz2",
-    "linux-64/pyside2-2.0.0~alpha0-py35_0.tar.bz2",
-    "linux-64/pyside2-2.0.0~alpha0-py36_0.tar.bz2",
-    "osx-64/pyside2-2.0.0~alpha0-py27_0.tar.bz2",
-    "osx-64/pyside2-2.0.0~alpha0-py35_0.tar.bz2",
-    "osx-64/pyside2-2.0.0~alpha0-py36_0.tar.bz2",
-]
+UNINDEXABLE = metadata["unindexable"]
 
-UNDISTRIBUTABLE = [
-    "cudatoolkit",
-    "cudnn",
-    "cutensor",
-    "cusparselt",
-    "msmpi",
-]
+UNDISTRIBUTABLE = metadata["undistributable"]
 
 UNDISTRIBUTABLE_HASH = hashlib.sha256(
     "".join(sorted(UNDISTRIBUTABLE)).encode("utf-8")
