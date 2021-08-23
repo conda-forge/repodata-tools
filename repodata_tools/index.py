@@ -12,6 +12,7 @@ from conda._vendor.toolz.itertoolz import groupby
 from conda_build.index import _build_current_repodata
 
 from .shards import get_shard_path
+from .tokens import get_github_client_with_app_token
 
 CHANNELDATA_VERSION = 1
 REPODATA_VERSION = 1
@@ -29,6 +30,18 @@ INIT_REPODATA = {
     'removed': [],
     'repodata_version': REPODATA_VERSION
 }
+
+
+def refresh_github_token_and_client():
+    if "APP_ID" in os.environ and "APP_PRIVATE_KEY" in os.environ:
+        global GH
+        global REPODATA
+
+        GH = get_github_client_with_app_token(
+            "APP_ID",
+            "APP_PRIVATE_KEY",
+        )
+        GH.get_repo(REPODATA_REPO)
 
 
 @tenacity.retry(

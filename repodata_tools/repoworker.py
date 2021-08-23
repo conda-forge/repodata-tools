@@ -33,6 +33,7 @@ from .index import (
     GH,
     REPODATA_NAME,
     REPODATA_REPO,
+    refresh_github_token_and_client,
 )
 
 WORKDIR = "repodata_products"
@@ -436,6 +437,10 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
 
     start_time = time.time()
 
+    # refresh at the start
+    refresh_github_token_and_client()
+    print_github_api_limits(GH)
+
     with timer(HEAD, "pulling repos"):
         os.makedirs(WORKDIR, exist_ok=True)
         if not os.path.exists("repodata-shards"):
@@ -464,6 +469,9 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         print("===================================================", flush=True)
 
         build_start_time = time.time()
+
+        refresh_github_token_and_client()
+        print_github_api_limits(GH)
 
         with timer(HEAD, "doing repodata products rebuild"), ThreadPoolExecutor(max_workers=8) as exec:  # noqa
             old_sha, new_sha, new_shards, removed_shards = _get_new_shards(
