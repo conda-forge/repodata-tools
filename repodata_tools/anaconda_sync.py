@@ -376,7 +376,8 @@ def upload_packages(
         )
         subprocess.run(
             f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${GITHUB_TOKEN}@github.com/conda-forge/releases.git",
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/"
+            "conda-forge/releases.git",
             shell=True,
             check=True,
         )
