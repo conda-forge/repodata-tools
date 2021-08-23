@@ -52,6 +52,14 @@ def generate_app_token(app_id, raw_pem):
                 algorithm='RS256',
             )
 
+        if (
+            "GITHUB_ACTIONS" in os.environ
+            and os.environ["GITHUB_ACTIONS"] == "true"
+        ):
+            sys.stdout.flush()
+            print("::add-mask::%s" % token, flush=True)
+
+        with redirect_stdout(f), redirect_stderr(f):
             r = requests.get(
                 "https://api.github.com/app/installations",
                 headers={
@@ -80,7 +88,8 @@ def generate_app_token(app_id, raw_pem):
             sys.stdout.flush()
             print("::add-mask::%s" % gh_token, flush=True)
 
-    except Exception:
+    except Exception as e:
+        print(e)
         gh_token = None
 
     return gh_token
