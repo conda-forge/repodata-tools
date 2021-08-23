@@ -39,7 +39,6 @@ def generate_app_token(app_id, raw_pem):
     try:
         if raw_pem[0] != b'-':
             raw_pem = base64.b64decode(raw_pem)
-        print(type(raw_pem), raw_pem[0], flush=True)
 
         f = io.StringIO()
         with redirect_stdout(f), redirect_stderr(f):
@@ -92,8 +91,7 @@ def generate_app_token(app_id, raw_pem):
             sys.stdout.flush()
             print("::add-mask::%s" % gh_token, flush=True)
 
-    except Exception as e:
-        print(e)
+    except Exception:
         gh_token = None
 
     return gh_token
@@ -125,6 +123,9 @@ def get_github_client_with_app_token(app_id_env, private_key_env):
             gh = None
     except Exception:
         gh = None
+
+    if gh is not None:
+        print("renewed github client", flush=True)
 
     return gh
 
