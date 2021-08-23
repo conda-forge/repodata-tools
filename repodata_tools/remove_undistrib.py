@@ -127,7 +127,8 @@ def remove_undistributable(
         )
         subprocess.run(
             f"cd {tmpdir} && git remote set-url --push origin "
-            "https://${DELTAG_GITHUB_TOKEN}@github.com/conda-forge/releases.git",
+            "https://x-access-token:${DELTAG_GITHUB_TOKEN}@github.com/"
+            "conda-forge/releases.git",
             shell=True,
             check=True,
         )
