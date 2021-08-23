@@ -102,17 +102,14 @@ def get_github_client_with_app_token(app_id_env, private_key_env):
         The github client object. May return None if there is an error.
     """
     try:
-        f = io.StringIO()
-        with redirect_stdout(f), redirect_stderr(f):
-            token = generate_app_token(
-                os.environ[app_id_env],
-                os.environ[private_key_env].encode(),
-            )
-            if token is not None:
-                gh = github.Github(token)
-            else:
-                gh = None
-
+        token = generate_app_token(
+            os.environ[app_id_env],
+            os.environ[private_key_env].encode(),
+        )
+        if token is not None:
+            gh = github.Github(token)
+        else:
+            gh = None
     except Exception:
         gh = None
 
