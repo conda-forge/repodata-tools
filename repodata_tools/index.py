@@ -2,6 +2,7 @@ import os
 import io
 import bz2
 import copy
+import time
 
 import github
 import tenacity
@@ -18,6 +19,7 @@ CHANNELDATA_VERSION = 1
 REPODATA_VERSION = 1
 
 GH = github.Github(os.environ["GITHUB_TOKEN"])
+TOKEN_TIME = time.time()
 REPODATA_ORG = "conda-forge"
 REPODATA_NAME = "repodata-shards"
 REPODATA_REPO = f"{REPODATA_ORG}/{REPODATA_NAME}"
@@ -33,15 +35,21 @@ INIT_REPODATA = {
 
 
 def refresh_github_token_and_client():
-    if "APP_ID" in os.environ and "APP_PRIVATE_KEY" in os.environ:
+    if (
+        "APP_ID" in os.environ
+        and "APP_PRIVATE_KEY" in os.environ
+        and time.time() - TOKEN_TIME > 1200
+    ):
         global GH
         global REPODATA
+        global TOKEN_TIME
 
         GH = get_github_client_with_app_token(
             "APP_ID",
             "APP_PRIVATE_KEY",
         )
-        GH.get_repo(REPODATA_REPO)
+        REPODATA = GH.get_repo(REPODATA_REPO)
+        TOKEN_TIME = time.time()
 
 
 @tenacity.retry(
