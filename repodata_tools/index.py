@@ -18,12 +18,18 @@ from .tokens import get_github_client_with_app_token
 CHANNELDATA_VERSION = 1
 REPODATA_VERSION = 1
 
-GH = github.Github(os.environ["GITHUB_TOKEN"])
-TOKEN_TIME = time.time()
 REPODATA_ORG = "conda-forge"
 REPODATA_NAME = "repodata-shards"
 REPODATA_REPO = f"{REPODATA_ORG}/{REPODATA_NAME}"
-REPODATA = GH.get_repo(REPODATA_REPO)
+
+if "GITHUB_TOKEN" in os.environ:
+    GH = github.Github(os.environ["GITHUB_TOKEN"])
+    REPODATA = GH.get_repo(REPODATA_REPO)
+    TOKEN_TIME = time.time()
+else:
+    GH = None
+    REPODATA = None
+    TOKEN_TIME = None
 
 INIT_REPODATA = {
     'info': {},
@@ -35,15 +41,19 @@ INIT_REPODATA = {
 
 
 def refresh_github_token_and_client():
+    global GH
+    global REPODATA
+    global TOKEN_TIME
+
     if (
         "APP_ID" in os.environ
         and "APP_PRIVATE_KEY" in os.environ
-        and time.time() - TOKEN_TIME > 1200
+        and (
+            GH is None
+            or
+            time.time() - TOKEN_TIME > 1200
+        )
     ):
-        global GH
-        global REPODATA
-        global TOKEN_TIME
-
         GH = get_github_client_with_app_token(
             "APP_ID",
             "APP_PRIVATE_KEY",
