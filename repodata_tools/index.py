@@ -36,6 +36,10 @@ INIT_REPODATA = {
 }
 
 
+def get_repodata():
+    return REPODATA
+
+
 def refresh_github_token_and_client():
     global GH
     global REPODATA

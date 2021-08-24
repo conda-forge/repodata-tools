@@ -27,12 +27,12 @@ from repodata_tools.index import (
     delete_old_repodata_releases,
     build_or_update_channeldata,
     build_or_update_links_and_repodata,
-    REPODATA,
     INIT_REPODATA,
     build_current_repodata,
     REPODATA_NAME,
     REPODATA_REPO,
     refresh_github_token_and_client,
+    get_repodata,
 )
 
 WORKDIR = "repodata_products"
@@ -359,7 +359,7 @@ def _load_current_data(make_releases, allow_unsafe):
     else:
         load_links = False
         try:
-            rel = REPODATA.get_latest_release()
+            rel = get_repodata().get_latest_release()
         except github.UnknownObjectException as e:
             if not allow_unsafe:
                 raise e
@@ -497,7 +497,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 )
             ):
                 tag = utcnow.strftime("%Y.%m.%d.%H.%M.%S")
-                rel = REPODATA.create_git_tag_and_release(
+                rel = get_repodata().create_git_tag_and_release(
                     tag,
                     "",
                     tag,
