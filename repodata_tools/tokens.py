@@ -37,6 +37,7 @@ def generate_app_token(app_id, raw_pem):
         The github token. May return None if there is an error.
     """
     try:
+        print(raw_pem[0], flush=True)
         if raw_pem[0] != b'-':
             raw_pem = base64.b64decode(raw_pem)
 
