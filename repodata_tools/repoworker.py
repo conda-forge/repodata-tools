@@ -19,7 +19,7 @@ import click
 
 from .shards import read_subdir_shards
 from .metadata import CONDA_FORGE_SUBIDRS
-from .utils import timer, print_github_api_limits
+from .utils import timer
 
 from .links import get_latest_links
 from .index import (
@@ -30,7 +30,6 @@ from .index import (
     REPODATA,
     INIT_REPODATA,
     build_current_repodata,
-    GH,
     REPODATA_NAME,
     REPODATA_REPO,
     refresh_github_token_and_client,
@@ -439,7 +438,6 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
 
     # refresh at the start
     refresh_github_token_and_client()
-    print_github_api_limits(GH)
 
     with timer(HEAD, "pulling repos"):
         os.makedirs(WORKDIR, exist_ok=True)
@@ -471,7 +469,6 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
         build_start_time = time.time()
 
         refresh_github_token_and_client()
-        print_github_api_limits(GH)
 
         with timer(HEAD, "doing repodata products rebuild"), ThreadPoolExecutor(max_workers=8) as exec:  # noqa
             old_sha, new_sha, new_shards, removed_shards = _get_new_shards(
@@ -718,12 +715,6 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 flush=True,
             )
             time.sleep(MIN_UPDATE_TIME - dt)
-
-        print(" ", flush=True)
-
-        print_github_api_limits(GH)
-
-        print(" ", flush=True)
 
     if DEBUG:
         with timer(HEAD, "dumping all data to JSON"):

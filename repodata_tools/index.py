@@ -14,6 +14,7 @@ from conda_build.index import _build_current_repodata
 
 from .shards import get_shard_path
 from .tokens import get_github_client_with_app_token
+from .utils import print_github_api_limits
 
 CHANNELDATA_VERSION = 1
 REPODATA_VERSION = 1
@@ -22,14 +23,9 @@ REPODATA_ORG = "conda-forge"
 REPODATA_NAME = "repodata-shards"
 REPODATA_REPO = f"{REPODATA_ORG}/{REPODATA_NAME}"
 
-if "GITHUB_TOKEN" in os.environ:
-    GH = github.Github(os.environ["GITHUB_TOKEN"])
-    REPODATA = GH.get_repo(REPODATA_REPO)
-    TOKEN_TIME = time.time()
-else:
-    GH = None
-    REPODATA = None
-    TOKEN_TIME = None
+GH = None
+REPODATA = None
+TOKEN_TIME = None
 
 INIT_REPODATA = {
     'info': {},
@@ -45,7 +41,11 @@ def refresh_github_token_and_client():
     global REPODATA
     global TOKEN_TIME
 
-    if (
+    if "GITHUB_TOKEN" in os.environ:
+        GH = github.Github(os.environ["GITHUB_TOKEN"])
+        REPODATA = GH.get_repo(REPODATA_REPO)
+        TOKEN_TIME = time.time()
+    elif (
         "APP_ID" in os.environ
         and "APP_PRIVATE_KEY" in os.environ
         and (
@@ -60,6 +60,12 @@ def refresh_github_token_and_client():
         )
         REPODATA = GH.get_repo(REPODATA_REPO)
         TOKEN_TIME = time.time()
+
+    print(" ", flush=True)
+
+    print_github_api_limits(GH)
+
+    print(" ", flush=True)
 
 
 @tenacity.retry(
