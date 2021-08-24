@@ -60,6 +60,7 @@ def generate_app_token(app_id, raw_pem):
             and os.environ["GITHUB_ACTIONS"] == "true"
         ):
             sys.stdout.flush()
+            print("masking JWT token for github actions", flush=True)
             print("::add-mask::%s" % token, flush=True)
 
         with redirect_stdout(f), redirect_stderr(f):
@@ -89,6 +90,7 @@ def generate_app_token(app_id, raw_pem):
             and os.environ["GITHUB_ACTIONS"] == "true"
         ):
             sys.stdout.flush()
+            print("masking GITHUB token for github actions", flush=True)
             print("::add-mask::%s" % gh_token, flush=True)
 
     except Exception:
@@ -123,9 +125,6 @@ def get_github_client_with_app_token(app_id_env, private_key_env):
             gh = None
     except Exception:
         gh = None
-
-    if gh is not None:
-        print("renewed github client", flush=True)
 
     return gh
 
