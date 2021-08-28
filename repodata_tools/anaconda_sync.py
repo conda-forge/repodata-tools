@@ -462,6 +462,8 @@ def main(rank, n_ranks, time_limit):
     """
     start_time = time.time()
 
+    print("rank|n_ranks: %d|%d" % (rank, n_ranks), flush=True)
+    
     all_shards = {}
     print("reading all shards", flush=True)
     for subdir in CONDA_FORGE_SUBIDRS:
