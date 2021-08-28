@@ -125,8 +125,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                     f"{label}/{subdir}/repodata.json"
                 )
 
-            if r.status_code != 200:
-                continue
+            r.raise_for_status()
 
             rd = r.json()
 
