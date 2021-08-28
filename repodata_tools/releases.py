@@ -15,7 +15,7 @@ from .shards import (
     push_shard,
 )
 from .metadata import UNDISTRIBUTABLE
-from .utils import split_pkg
+from .utils import split_pkg, print_github_api_limits
 
 
 @tenacity.retry(
@@ -152,6 +152,7 @@ def main():
 
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
+    print_github_api_limits(gh)
     repo = gh.get_repo("conda-forge/releases")
 
     # make release and upload if shard does not exist
