@@ -136,11 +136,18 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                 for pkg in rd["packages"]
                 if compute_subdir_pkg_index(os.path.join(subdir, pkg)) % n_ranks == rank
             ])
+            num_missing = sum(
+                1 
+                if os.path.join(subdir, pkg) not in all_shards
+                else 0
+                for pkg in all_pkgs
+            )
+            print(f"    num missing pkgs: {num_missing}", flush=True)
 
             total_chunks = len(all_pkgs) // 64 + 1
-            for chunk_index, pkg_chunk in tqdm.tqdm(enumerate(
+            for chunk_index, pkg_chunk in enumerate(
                 chunk_iterable(all_pkgs, 64)
-            )):
+            ):
                 jobs = []
                 max_bytes = 0
                 for pkg in pkg_chunk:
