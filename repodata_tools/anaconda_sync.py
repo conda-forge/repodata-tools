@@ -138,9 +138,9 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
             ])
 
             total_chunks = len(all_pkgs) // 64 + 1
-            for chunk_index, pkg_chunk in enumerate(
+            for chunk_index, pkg_chunk in tqdm.tqdm(enumerate(
                 chunk_iterable(all_pkgs, 64)
-            ):
+            )):
                 jobs = []
                 max_bytes = 0
                 for pkg in pkg_chunk:
