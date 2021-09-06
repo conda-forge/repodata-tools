@@ -202,7 +202,6 @@ def push_shard(shard, shard_pth, subdir, pkg):
             "message": "added %s/%s [ci skip] [cf admin skip] ***NO_CI***" % (
                 subdir, pkg),
             "content": edata,
-            "branch": "master",
         }
 
         r = requests.put(
