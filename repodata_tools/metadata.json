@@ -15,6 +15,7 @@
         "cusparselt",
         "msmpi",
         "msms",
-        "nvcc"
+        "nvcc",
+        "edgetest-hub"
     ]
 }
