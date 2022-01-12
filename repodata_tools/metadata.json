@@ -16,6 +16,8 @@
         "msmpi",
         "msms",
         "nvcc",
-        "edgetest-hub"
+        "edgetest-hub",
+        "cuquantum",
+        "cuda-python"
     ]
 }
