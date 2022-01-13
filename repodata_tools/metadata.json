@@ -18,6 +18,7 @@
         "nvcc",
         "edgetest-hub",
         "cuquantum",
+        "cuquantum-python",
         "cuda-python"
     ]
 }
