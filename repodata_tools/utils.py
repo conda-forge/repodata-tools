@@ -12,9 +12,12 @@ def compute_subdir_pkg_index(subdir_pkg):
 def split_pkg(pkg):
     """code due to isuruf and CJ-Wright
     """
-    if not pkg.endswith(".tar.bz2"):
-        raise RuntimeError("Can only process packages that end in .tar.bz2")
-    pkg = pkg[:-8]
+    if pkg.endswith(".tar.bz2"):
+        pkg = pkg[:-len(".tar.bz2")]
+    elif pkg.endswith(".conda"):
+        pkg = pkg[:-len(".conda")]
+    else:
+        raise RuntimeError("Can only process packages that end in .tar.bz2 or .conda!")
     plat, pkg_name = pkg.split(os.path.sep)
     name_ver, build = pkg_name.rsplit('-', 1)
     name, ver = name_ver.rsplit('-', 1)
