@@ -4,7 +4,6 @@ import subprocess
 import time
 import hmac
 import copy
-import sys
 import random
 import functools
 
@@ -137,7 +136,7 @@ def update_shards(labels, all_shards, rank, n_ranks, start_time, time_limit=3300
                 if compute_subdir_pkg_index(os.path.join(subdir, pkg)) % n_ranks == rank
             ])
             num_missing = sum(
-                1 
+                1
                 if os.path.join(subdir, pkg) not in all_shards
                 else 0
                 for pkg in all_pkgs
@@ -447,6 +446,12 @@ def upload_packages(
 
 @click.command()
 @click.option(
+    "--step",
+    type=str,
+    help="The step to execute.",
+    required=True,
+)
+@click.option(
     "--rank",
     default=0,
     type=int,
@@ -464,13 +469,13 @@ def upload_packages(
     type=int,
     help="The maximum time to run in seconds."
 )
-def main(rank, n_ranks, time_limit):
+def main(step, rank, n_ranks, time_limit):
     """Sync anaconda repodata shards w/ a local copy and upload packages.
     """
     start_time = time.time()
 
     print("rank|n_ranks: %d|%d" % (rank, n_ranks), flush=True)
-    
+
     all_shards = {}
     print("reading all shards", flush=True)
     for subdir in CONDA_FORGE_SUBIDRS:
@@ -484,50 +489,51 @@ def main(rank, n_ranks, time_limit):
         )
     print(" ", flush=True)
 
-    print("getting labels", flush=True)
-    label_info = requests.get(
-        "https://api.anaconda.org/channels/conda-forge",
-        headers={'Authorization': 'token {}'.format(os.environ["BINSTAR_TOKEN"])}
-    ).json()
+    if step == "shards":
+        print("getting labels", flush=True)
+        label_info = requests.get(
+            "https://api.anaconda.org/channels/conda-forge",
+            headers={'Authorization': 'token {}'.format(os.environ["BINSTAR_TOKEN"])}
+        ).json()
 
-    labels = sorted(
-        label
-        for label in label_info
-        if "/" not in label
-    )
-    counts = {label: label_info[label]["count"] for label in labels}
-    labels = sorted(labels, key=lambda x: counts[x], reverse=True)
-    for label in labels:
-        print("%-32s %s" % (label, counts[label]), flush=True)
-    print(" ", flush=True)
+        labels = sorted(
+            label
+            for label in label_info
+            if "/" not in label
+        )
+        counts = {label: label_info[label]["count"] for label in labels}
+        labels = sorted(labels, key=lambda x: counts[x], reverse=True)
+        for label in labels:
+            print("%-32s %s" % (label, counts[label]), flush=True)
+        print(" ", flush=True)
 
-    print("updating shards", flush=True)
-    update_shards(
-        labels,
-        all_shards,
-        rank,
-        n_ranks,
-        start_time,
-        time_limit=time_limit,
-    )
-    print(" ", flush=True)
+        print("updating shards", flush=True)
+        update_shards(
+            labels,
+            all_shards,
+            rank,
+            n_ranks,
+            start_time,
+            time_limit=time_limit,
+        )
+        print(" ", flush=True)
 
-    if time.time() - start_time > time_limit:
-        sys.exit(0)
+        try:
+            _push_repo()
+        except Exception:
+            pass
 
-    print("uploading releases", flush=True)
+    elif step == "releases":
+        print("uploading releases", flush=True)
 
-    try:
-        _push_repo()
-    except Exception:
-        pass
-
-    upload_packages(
-        all_shards,
-        rank,
-        n_ranks,
-        start_time,
-        time_limit,
-        max_write=400,
-    )
-    print(" ", flush=True)
+        upload_packages(
+            all_shards,
+            rank,
+            n_ranks,
+            start_time,
+            time_limit,
+            max_write=400,
+        )
+        print(" ", flush=True)
+    else:
+        raise RuntimeError("Step '%s' not recognized!" % step)
