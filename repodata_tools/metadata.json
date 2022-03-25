@@ -19,6 +19,7 @@
         "edgetest-hub",
         "cuquantum",
         "cuquantum-python",
-        "cuda-python"
+        "cuda-python",
+        "libcudf"
     ]
 }
