@@ -299,10 +299,11 @@ def build_or_update_links_and_repodata(
 
     for subdir_pkg in removed_shards:
         for label in repodata[subdir]:
-            if subdir_pkg in repodata[subdir][label]["packages"]:
-                del repodata[subdir][label]["packages"][subdir_pkg]
-        if subdir_pkg in links:
-            del links["packages"][subdir_pkg]
+            for index_key in ["packages", "packages.conda"]:
+                if subdir_pkg in repodata[subdir][label][index_key]:
+                    del repodata[subdir][label][index_key][subdir_pkg]
+                if subdir_pkg in links[index_key]:
+                    del links[index_key][subdir_pkg]
 
     for subdir_pkg, shard in shards.items():
         shard["labels"] = override_labels.get(subdir_pkg, shard["labels"])
@@ -318,9 +319,13 @@ def build_or_update_links_and_repodata(
 
                 repodata[subdir][label]["info"]["subdir"] = subdir
 
-            repodata[subdir][label]["packages"][shard["package"]] \
-                = shard["repodata"]
-            links["packages"][subdir_pkg] = shard["url"]
+            index_key = (
+                "packages.conda"
+                if shard["package"].endswith(".conda")
+                else "packages"
+            )
+            repodata[subdir][label][index_key][shard["package"]] = shard["repodata"]
+            links[index_key][subdir_pkg] = shard["url"]
             updated_data.add((subdir, label))
 
     return updated_data

@@ -82,7 +82,10 @@ def _fetch_repodata(links, subdir, label):
             flush=True,
         )
         r = requests.get(url)
-        return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        rd = json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        if "packages.conda" not in rd:
+            rd["packages.conda"] = {}
+        return rd
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
@@ -105,7 +108,10 @@ def _fetch_patched_repodata(links, subdir, label):
             flush=True,
         )
         r = requests.get(url)
-        return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        rd = json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        if "packages.conda" not in rd:
+            rd["packages.conda"] = {}
+        return rd
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
@@ -341,6 +347,7 @@ def _update_and_reimport_patch_fns(old_sha):
 def _load_current_data(make_releases, allow_unsafe):
     all_links = {
         "packages": {},
+        "packages.conda": {},
         "serverdata": {},
         "current-shas": {},
         "labels": [],
@@ -383,6 +390,9 @@ def _load_current_data(make_releases, allow_unsafe):
                     )
             else:
                 all_links = get_latest_links()
+
+        if "packages.conda" not in all_links:
+            all_links["packages.conda"] = {}
 
         return {}, all_links
 
