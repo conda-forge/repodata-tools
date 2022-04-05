@@ -82,7 +82,10 @@ def _fetch_repodata(links, subdir, label):
             flush=True,
         )
         r = requests.get(url)
-        return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        rd = json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        if "packages.conda" not in rd:
+            rd["packages.conda"] = {}
+        return rd
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
@@ -105,7 +108,10 @@ def _fetch_patched_repodata(links, subdir, label):
             flush=True,
         )
         r = requests.get(url)
-        return json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        rd = json.load(io.StringIO(bz2.decompress(r.content).decode("utf-8")))
+        if "packages.conda" not in rd:
+            rd["packages.conda"] = {}
+        return rd
     else:
         rd = copy.deepcopy(INIT_REPODATA)
         rd["info"]["subdir"] = subdir
@@ -146,13 +152,14 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
         # compute the new data to patch
         data_to_patch = copy.deepcopy(INIT_REPODATA)
         data_to_patch["info"]["subdir"] = subdir
-        add_fn = (
-            set(repodata["packages"])
-            - set(removed)
-            - set(patched_repodata["packages"])
-        )
-        for fn in add_fn:
-            data_to_patch["packages"][fn] = copy.deepcopy(repodata["packages"][fn])
+        for index_key in ["packages", "packages.conda"]:
+            add_fn = (
+                set(repodata[index_key])
+                - set(removed)
+                - set(patched_repodata[index_key])
+            )
+            for fn in add_fn:
+                data_to_patch[index_key][fn] = copy.deepcopy(repodata[index_key][fn])
 
         new_index = patch_fns["gen_new_index"](data_to_patch, subdir)
         _clean_nones(new_index)
@@ -173,8 +180,9 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
     # from the releases before trying again - MRB 2020/09/21
     # to_remove = set(removed) - set(patched_repodata["removed"])
     for fn in removed:
-        if fn in patched_repodata["packages"]:
-            del patched_repodata["packages"][fn]
+        for index_key in ["packages", "packages.conda"]:
+            if fn in patched_repodata[index_key]:
+                del patched_repodata[index_key][fn]
 
     patched_repodata["removed"] = sorted(removed)
 
@@ -339,6 +347,7 @@ def _update_and_reimport_patch_fns(old_sha):
 def _load_current_data(make_releases, allow_unsafe):
     all_links = {
         "packages": {},
+        "packages.conda": {},
         "serverdata": {},
         "current-shas": {},
         "labels": [],
@@ -381,6 +390,9 @@ def _load_current_data(make_releases, allow_unsafe):
                     )
             else:
                 all_links = get_latest_links()
+
+        if "packages.conda" not in all_links:
+            all_links["packages.conda"] = {}
 
         return {}, all_links
 

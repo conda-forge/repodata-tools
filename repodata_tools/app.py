@@ -173,7 +173,10 @@ async def subdir_repodatadatabz2_curr_label(label, subdir):
 @app.get("/conda-forge-sparta/label/{label}/{subdir}/{pkg}")
 async def subdir_pkg_label(label, subdir, pkg):
     subdir_pkg = os.path.join(subdir, pkg)
-    url = LINKS["packages"].get(subdir_pkg, None)
+    url = (
+        LINKS["packages"].get(subdir_pkg, None) or
+        LINKS["packages.conda"].get(subdir_pkg, None)
+    )
     if url is None:
         raise HTTPException(
             status_code=404, detail=f"label/{label}/{subdir_pkg} not found!"
