@@ -146,13 +146,14 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
         # compute the new data to patch
         data_to_patch = copy.deepcopy(INIT_REPODATA)
         data_to_patch["info"]["subdir"] = subdir
-        add_fn = (
-            set(repodata["packages"])
-            - set(removed)
-            - set(patched_repodata["packages"])
-        )
-        for fn in add_fn:
-            data_to_patch["packages"][fn] = copy.deepcopy(repodata["packages"][fn])
+        for index_key in ["packages", "packages.conda"]:
+            add_fn = (
+                set(repodata[index_key])
+                - set(removed)
+                - set(patched_repodata[index_key])
+            )
+            for fn in add_fn:
+                data_to_patch[index_key][fn] = copy.deepcopy(repodata[index_key][fn])
 
         new_index = patch_fns["gen_new_index"](data_to_patch, subdir)
         _clean_nones(new_index)
@@ -173,8 +174,9 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
     # from the releases before trying again - MRB 2020/09/21
     # to_remove = set(removed) - set(patched_repodata["removed"])
     for fn in removed:
-        if fn in patched_repodata["packages"]:
-            del patched_repodata["packages"][fn]
+        for index_key in ["packages", "packages.conda"]:
+            if fn in patched_repodata[index_key]:
+                del patched_repodata[index_key][fn]
 
     patched_repodata["removed"] = sorted(removed)
 
