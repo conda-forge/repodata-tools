@@ -157,12 +157,15 @@ def _patch_repodata(repodata, patched_repodata, subdir, patch_fns, do_all=False)
         new_index = patch_fns["gen_new_index"](data_to_patch, subdir)
         _clean_nones(new_index)
 
-        patched_repodata["packages"].update(new_index)
+        for index_key in ["packages", "packages.conda"]:
+            patched_repodata[index_key].update(new_index[index_key])
     else:
         new_index = patch_fns["gen_new_index"](copy.deepcopy(repodata), subdir)
         _clean_nones(new_index)
 
-        patched_repodata["packages"] = new_index
+        for index_key in ["packages", "packages.conda"]:
+            patched_repodata[index_key] = new_index[index_key]
+
         patched_repodata["removed"] = []
 
     # FIXME: this appears to be buggy - I think the line resetting removed above fixes

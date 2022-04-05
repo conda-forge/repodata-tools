@@ -323,18 +323,6 @@ def build_or_update_links_and_repodata(
             links["packages"][subdir_pkg] = shard["url"]
             updated_data.add((subdir, label))
 
-    for subdir in repodata:
-        for label in repodata[subdir]:
-            for key in ["packages", "packages.conda"]:
-                if key in repodata[subdir][label]:
-                    for pkg in list(repodata[subdir][label][key]):
-                        if "name" not in repodata[subdir][label][key][pkg]:
-                            print(
-                                "\n\nBAD REPODATA SHARD: %s/%s\n\n" % (subdir, pkg),
-                                flush=True,
-                            )
-                        del repodata[subdir][label][key][pkg]
-
     return updated_data
 
 
