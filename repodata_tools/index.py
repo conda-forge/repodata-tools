@@ -324,15 +324,16 @@ def build_or_update_links_and_repodata(
             updated_data.add((subdir, label))
 
     for subdir in repodata:
-        for key in ["packages", "packages.conda"]:
-            if key in repodata[subdir]:
-                for pkg in list(repodata[subdir][key]):
-                    if "name" not in repodata[subdir][key][pkg]:
-                        print(
-                            "\n\nBAD REPODATA SHARD: %s/%s\n\n" % (subdir, pkg),
-                            flush=True,
-                        )
-                    del repodata[subdir][key][pkg]
+        for label in repodata[subdir]:
+            for key in ["packages", "packages.conda"]:
+                if key in repodata[subdir][label]:
+                    for pkg in list(repodata[subdir][label][key]):
+                        if "name" not in repodata[subdir][label][key][pkg]:
+                            print(
+                                "\n\nBAD REPODATA SHARD: %s/%s\n\n" % (subdir, pkg),
+                                flush=True,
+                            )
+                        del repodata[subdir][label][key][pkg]
 
     return updated_data
 
