@@ -662,6 +662,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
             else:
                 # do this to catch errors
                 futures = None
+                rel = None
 
             for subdir in CONDA_FORGE_SUBIDRS:
                 try:
@@ -682,27 +683,28 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                         exec=exec,
                     )
                 except Exception:
-                    for fn in list(all_links["serverdata"]):
-                        if f"_{subdir}" in fn:
-                            del all_links["serverdata"][fn]
+                    if rel is not None and futures is not None:
+                        for fn in list(all_links["serverdata"]):
+                            if f"_{subdir}" in fn:
+                                del all_links["serverdata"][fn]
 
-                    # rebuild it all if we error
-                    _rebuild_subdir(
-                        subdir=subdir,
-                        new_shards=None,
-                        removed_shards=None,
-                        repatch_all_pkgs=True,
-                        all_repodata=all_repodata,
-                        all_patched_repodata=all_patched_repodata,
-                        all_links=all_links,
-                        updated_data=updated_data,
-                        make_releases=make_releases,
-                        main_only=main_only,
-                        patch_fns=patch_fns,
-                        futures=futures,
-                        rel=rel,
-                        exec=exec,
-                    )
+                        # rebuild it all if we error
+                        _rebuild_subdir(
+                            subdir=subdir,
+                            new_shards=None,
+                            removed_shards=None,
+                            repatch_all_pkgs=True,
+                            all_repodata=all_repodata,
+                            all_patched_repodata=all_patched_repodata,
+                            all_links=all_links,
+                            updated_data=updated_data,
+                            make_releases=make_releases,
+                            main_only=main_only,
+                            patch_fns=patch_fns,
+                            futures=futures,
+                            rel=rel,
+                            exec=exec,
+                        )
 
             all_links["current-shas"]["repodata-shards-sha"] = new_sha
             all_links["current-shas"]["repodata-patches-sha"] = new_patch_sha
