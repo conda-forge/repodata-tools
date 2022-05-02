@@ -682,6 +682,10 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                         exec=exec,
                     )
                 except Exception:
+                    for fn in list(all_links["serverdata"]):
+                        if f"_{subdir}" in fn:
+                            del all_links["serverdata"][fn]
+
                     # rebuild it all if we error
                     _rebuild_subdir(
                         subdir=subdir,
