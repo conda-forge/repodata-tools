@@ -420,6 +420,155 @@ def _clone_and_init_repodata_patches():
     )
 
 
+def _rebuild_subdir(
+    *, subdir, new_shards, removed_shards, repatch_all_pkgs,
+    all_repodata, all_patched_repodata, all_links, updated_data,
+    make_releases, main_only, patch_fns, futures, rel,
+):
+    if new_shards is not None:
+        new_subdir_shards = [
+            k
+            for k in new_shards
+            if k.startswith(f"repodata-shards/shards/{subdir}/")
+        ]
+    else:
+        # this is a sentinal that indicates a full rebuild
+        new_subdir_shards = None
+
+    if removed_shards is not None:
+        removed_subdir_shards = [
+            k
+            for k in removed_shards
+            if k.startswith(f"repodata-shards/shards/{subdir}/")
+        ]
+    else:
+        # this is a sentinal that indicates a full rebuild
+        removed_subdir_shards = None
+
+    if subdir not in all_repodata:
+        all_repodata[subdir] = {}
+    if subdir not in all_patched_repodata:
+        all_patched_repodata[subdir] = {}
+
+    subdir_updated_data = set()
+
+    with timer(HEAD, "processing shards for subdir %s" % subdir):
+        if (
+            new_subdir_shards is None
+            or len(new_subdir_shards) > 0
+            or removed_subdir_shards is None
+            or len(removed_subdir_shards) > 0
+        ):
+            with timer(HEAD, "making repodata", indent=1):
+                subdir_updated_data = _update_repodata_from_shards(
+                    all_repodata,
+                    all_links,
+                    new_subdir_shards,
+                    removed_subdir_shards,
+                    subdir,
+                )
+                updated_data |= subdir_updated_data
+                all_labels = set(all_links["labels"])
+                all_labels |= set(
+                    [label for label in all_patched_repodata[subdir]])
+                all_labels |= set(
+                    [label for label in all_repodata[subdir]])
+                all_links["labels"] = sorted(all_labels)
+
+        if make_releases and (subdir_updated_data or repatch_all_pkgs):
+            with timer(HEAD, "patching and writing repodata", indent=1):
+                for label in all_links["labels"]:
+                    if (
+                        (subdir, label) not in updated_data
+                        and not repatch_all_pkgs
+                    ):
+                        continue
+                    if main_only and label != "main":
+                        continue
+
+                    if label not in all_repodata[subdir]:
+                        all_repodata[subdir][label] = \
+                            _fetch_repodata(all_links, subdir, label)
+
+                    if label not in all_patched_repodata[subdir]:
+                        all_patched_repodata[subdir][label] = \
+                            _fetch_patched_repodata(
+                                all_links, subdir, label
+                            )
+
+                    if label == "broken":
+                        all_patched_repodata[subdir][label] = copy.deepcopy(
+                            all_repodata[subdir][label]
+                        )
+                    else:
+                        _patch_repodata(
+                            all_repodata[subdir][label],
+                            all_patched_repodata[subdir][label],
+                            subdir,
+                            patch_fns,
+                            do_all=repatch_all_pkgs,
+                        )
+
+                    futures.extend(_write_compress_and_start_upload(
+                        all_patched_repodata[subdir][label],
+                        f"repodata_{subdir}_{label}.json",
+                        rel,
+                        exec,
+                    ))
+
+            with timer(
+                HEAD, "building and writing current repodata", indent=1
+            ):
+                for label in all_links["labels"]:
+                    if (
+                        (subdir, label) not in updated_data
+                        and not repatch_all_pkgs
+                    ):
+                        continue
+                    if main_only and label != "main":
+                        continue
+
+                    if label not in all_patched_repodata[subdir]:
+                        with timer(
+                            HEAD,
+                            f"fetching patched repodata for "
+                            f"{label}/{subdir}",
+                            indent=3,
+                        ):
+                            all_patched_repodata[subdir][label] = \
+                                _fetch_patched_repodata(
+                                    all_links, subdir, label
+                                )
+
+                    crd = build_current_repodata(
+                        subdir,
+                        all_patched_repodata[subdir][label],
+                        )
+
+                    futures.extend(_write_compress_and_start_upload(
+                        crd,
+                        f"current_repodata_{subdir}_{label}.json",
+                        rel,
+                        exec,
+                    ))
+
+            with timer(
+                HEAD, "writing repodata from packages", indent=1
+            ):
+                for label in all_links["labels"]:
+                    if (subdir, label) not in updated_data:
+                        continue
+                    if main_only and label != "main":
+                        continue
+
+                    futures.extend(_write_compress_and_start_upload(
+                        all_repodata[subdir][label],
+                        f"repodata_from_packages_{subdir}_{label}.json",
+                        rel,
+                        exec,
+                    ))
+
+
 @click.command()
 @click.argument("time_limit", type=int)
 @click.option(
@@ -515,148 +664,39 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                 futures = None
 
             for subdir in CONDA_FORGE_SUBIDRS:
-                if new_shards is not None:
-                    new_subdir_shards = [
-                        k
-                        for k in new_shards
-                        if k.startswith(f"repodata-shards/shards/{subdir}/")
-                    ]
-                else:
-                    # this is a sentinal that indicates a full rebuild
-                    new_subdir_shards = None
-
-                if removed_shards is not None:
-                    removed_subdir_shards = [
-                        k
-                        for k in removed_shards
-                        if k.startswith(f"repodata-shards/shards/{subdir}/")
-                    ]
-                else:
-                    # this is a sentinal that indicates a full rebuild
-                    removed_subdir_shards = None
-
-                if subdir not in all_repodata:
-                    all_repodata[subdir] = {}
-                if subdir not in all_patched_repodata:
-                    all_patched_repodata[subdir] = {}
-
-                subdir_updated_data = set()
-
-                with timer(HEAD, "processing shards for subdir %s" % subdir):
-                    if (
-                        new_subdir_shards is None
-                        or len(new_subdir_shards) > 0
-                        or removed_subdir_shards is None
-                        or len(removed_subdir_shards) > 0
-                    ):
-                        with timer(HEAD, "making repodata", indent=1):
-                            subdir_updated_data = _update_repodata_from_shards(
-                                all_repodata,
-                                all_links,
-                                new_subdir_shards,
-                                removed_subdir_shards,
-                                subdir,
-                            )
-                            updated_data |= subdir_updated_data
-                            all_labels = set(all_links["labels"])
-                            all_labels |= set(
-                                [label for label in all_patched_repodata[subdir]])
-                            all_labels |= set(
-                                [label for label in all_repodata[subdir]])
-                            all_links["labels"] = sorted(all_labels)
-
-                    if make_releases and (subdir_updated_data or repatch_all_pkgs):
-                        with timer(HEAD, "patching and writing repodata", indent=1):
-                            for label in all_links["labels"]:
-                                if (
-                                    (subdir, label) not in updated_data
-                                    and not repatch_all_pkgs
-                                ):
-                                    continue
-                                if main_only and label != "main":
-                                    continue
-
-                                if label not in all_repodata[subdir]:
-                                    all_repodata[subdir][label] = \
-                                        _fetch_repodata(all_links, subdir, label)
-
-                                if label not in all_patched_repodata[subdir]:
-                                    all_patched_repodata[subdir][label] = \
-                                        _fetch_patched_repodata(
-                                            all_links, subdir, label
-                                        )
-
-                                if label == "broken":
-                                    all_patched_repodata[subdir][label] = copy.deepcopy(
-                                        all_repodata[subdir][label]
-                                    )
-                                else:
-                                    _patch_repodata(
-                                        all_repodata[subdir][label],
-                                        all_patched_repodata[subdir][label],
-                                        subdir,
-                                        patch_fns,
-                                        do_all=repatch_all_pkgs,
-                                    )
-
-                                futures.extend(_write_compress_and_start_upload(
-                                    all_patched_repodata[subdir][label],
-                                    f"repodata_{subdir}_{label}.json",
-                                    rel,
-                                    exec,
-                                ))
-
-                        with timer(
-                            HEAD, "building and writing current repodata", indent=1
-                        ):
-                            for label in all_links["labels"]:
-                                if (
-                                    (subdir, label) not in updated_data
-                                    and not repatch_all_pkgs
-                                ):
-                                    continue
-                                if main_only and label != "main":
-                                    continue
-
-                                if label not in all_patched_repodata[subdir]:
-                                    with timer(
-                                        HEAD,
-                                        f"fetching patched repodata for "
-                                        f"{label}/{subdir}",
-                                        indent=3,
-                                    ):
-                                        all_patched_repodata[subdir][label] = \
-                                            _fetch_patched_repodata(
-                                                all_links, subdir, label
-                                            )
-
-                                crd = build_current_repodata(
-                                    subdir,
-                                    all_patched_repodata[subdir][label],
-                                    )
-
-                                futures.extend(_write_compress_and_start_upload(
-                                    crd,
-                                    f"current_repodata_{subdir}_{label}.json",
-                                    rel,
-                                    exec,
-                                ))
-
-                        with timer(
-                            HEAD, "writing repodata from packages", indent=1
-                        ):
-                            for label in all_links["labels"]:
-                                if (subdir, label) not in updated_data:
-                                    continue
-                                if main_only and label != "main":
-                                    continue
-
-                                futures.extend(_write_compress_and_start_upload(
-                                    all_repodata[subdir][label],
-                                    f"repodata_from_packages_{subdir}_{label}.json",
-                                    rel,
-                                    exec,
-                                ))
+                try:
+                    _rebuild_subdir(
+                        subdir=subdir,
+                        new_shards=new_shards,
+                        removed_shards=removed_shards,
+                        repatch_all_pkgs=repatch_all_pkgs,
+                        all_repodata=all_repodata,
+                        all_patched_repodata=all_patched_repodata,
+                        all_links=all_links,
+                        updated_data=updated_data,
+                        make_releases=make_releases,
+                        main_only=main_only,
+                        patch_fns=patch_fns,
+                        futures=futures,
+                        rel=rel,
+                    )
+                except Exception:
+                    # rebuild it all if we error
+                    _rebuild_subdir(
+                        subdir=subdir,
+                        new_shards=None,
+                        removed_shards=None,
+                        repatch_all_pkgs=True,
+                        all_repodata=all_repodata,
+                        all_patched_repodata=all_patched_repodata,
+                        all_links=all_links,
+                        updated_data=updated_data,
+                        make_releases=make_releases,
+                        main_only=main_only,
+                        patch_fns=patch_fns,
+                        futures=futures,
+                        rel=rel,
+                    )
 
             all_links["current-shas"]["repodata-shards-sha"] = new_sha
             all_links["current-shas"]["repodata-patches-sha"] = new_patch_sha
