@@ -423,7 +423,7 @@ def _clone_and_init_repodata_patches():
 def _rebuild_subdir(
     *, subdir, new_shards, removed_shards, repatch_all_pkgs,
     all_repodata, all_patched_repodata, all_links, updated_data,
-    make_releases, main_only, patch_fns, futures, rel,
+    make_releases, main_only, patch_fns, futures, rel, exec,
 ):
     if new_shards is not None:
         new_subdir_shards = [
@@ -679,6 +679,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                         patch_fns=patch_fns,
                         futures=futures,
                         rel=rel,
+                        exec=exec,
                     )
                 except Exception:
                     # rebuild it all if we error
@@ -696,6 +697,7 @@ def main(time_limit, make_releases, main_only, debug, allow_unsafe):
                         patch_fns=patch_fns,
                         futures=futures,
                         rel=rel,
+                        exec=exec,
                     )
 
             all_links["current-shas"]["repodata-shards-sha"] = new_sha
