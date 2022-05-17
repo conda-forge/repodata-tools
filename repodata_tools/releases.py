@@ -145,15 +145,16 @@ def main():
         print("shard already exists! not uploading new package!", flush=True)
         sys.exit(0)
 
-    if split_pkg(os.path.join(subdir, pkg))[1] in UNDISTRIBUTABLE:
-        upload_pkg = False
-    else:
-        upload_pkg = True
+    # we are not making github releases anymore
+    # if split_pkg(os.path.join(subdir, pkg))[1] in UNDISTRIBUTABLE:
+    #     upload_pkg = False
+    # else:
+    #     upload_pkg = True
+    upload_pkg = False
 
     # repo info
     gh = github.Github(os.environ["GITHUB_TOKEN"])
     print_github_api_limits(gh)
-    repo = gh.get_repo("conda-forge/releases")
 
     # make release and upload if shard does not exist
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -168,6 +169,7 @@ def main():
         )
 
         if upload_pkg:
+            repo = gh.get_repo("conda-forge/releases")
             rel, curr_asts = get_or_make_release(
                 repo,
                 subdir,
